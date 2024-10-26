@@ -1,0 +1,457 @@
+{
+  "version": "1.0",
+  "truncation": null,
+  "padding": null,
+  "added_tokens": [
+    {
+      "id": 0,
+      "content": "<s>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": true,
+      "special": true
+    },
+    {
+      "id": 1,
+      "content": "<pad>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": true,
+      "special": true
+    },
+    {
+      "id": 2,
+      "content": "</s>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": true,
+      "special": true
+    },
+    {
+      "id": 3,
+      "content": "<unk>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": true,
+      "special": true
+    },
+    {
+      "id": 50264,
+      "content": "<mask>",
+      "single_word": false,
+      "lstrip": true,
+      "rstrip": false,
+      "normalized": true,
+      "special": true
+    },
+    {
+      "id": 50265,
+      "content": "<od>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 50266,
+      "content": "</od>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 50267,
+      "content": "<ocr>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 50268,
+      "content": "</ocr>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 50269,
+      "content": "<loc_0>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 50270,
+      "content": "<loc_1>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 50271,
+      "content": "<loc_2>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51262,
+      "content": "<loc_993>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51263,
+      "content": "<loc_994>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51264,
+      "content": "<loc_995>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51265,
+      "content": "<loc_996>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51266,
+      "content": "<loc_997>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51267,
+      "content": "<loc_998>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51268,
+      "content": "<loc_999>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51269,
+      "content": "<cap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51270,
+      "content": "</cap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51271,
+      "content": "<ncap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51272,
+      "content": "</ncap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51273,
+      "content": "<dcap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51274,
+      "content": "</dcap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51275,
+      "content": "<grounding>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51276,
+      "content": "</grounding>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51277,
+      "content": "<seg>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51278,
+      "content": "</seg>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51279,
+      "content": "<sep>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51280,
+      "content": "<region_cap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51281,
+      "content": "</region_cap>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51282,
+      "content": "<region_to_desciption>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51283,
+      "content": "</region_to_desciption>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51284,
+      "content": "<proposal>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51285,
+      "content": "</proposal>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51286,
+      "content": "<poly>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51287,
+      "content": "</poly>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 51288,
+      "content": "<and>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    }
+  ],
+  "normalizer": null,
+  "pre_tokenizer": {
+    "type": "ByteLevel",
+    "add_prefix_space": false,
+    "trim_offsets": true,
+    "use_regex": true
+  },
+  "post_processor": {
+    "type": "RobertaProcessing",
+    "sep": [
+      "</s>",
+      2
+    ],
+    "cls": [
+      "<s>",
+      0
+    ],
+    "trim_offsets": true,
+    "add_prefix_space": false
+  },
+  "decoder": {
+    "type": "ByteLevel",
+    "add_prefix_space": true,
+    "trim_offsets": true,
+    "use_regex": true
+  },
+  "model": {
+    "type": "BPE",
+    "dropout": null,
+    "unk_token": null,
+    "continuing_subword_prefix": "",
+    "end_of_word_suffix": "",
+    "fuse_unk": false,
+    "byte_fallback": false,
+    "ignore_merges": false,
+    "vocab": {
+      "<s>": 0,
+      "<pad>": 1,
+      "</s>": 2,
+      "<unk>": 3,
+      ".": 4,
+      "Ġthe": 5,
+      ",": 6,
+      "ĠsrfN": 50237,
+      "ĠlargeDownload": 50238,
+      "ĠOkawaru": 50239,
+      "ĠsrfAttach": 50240,
+      "EStreamFrame": 50241,
+      "ãĤ¼ãĤ¦ãĤ¹": 50242,
+      "ĠSolidGoldMagikarp": 50243,
+      "ĊÂł": 50244,
+      "ĠSetTextColor": 50245,
+      "Ġfixme": 50246,
+      "ĠãĤµãĥ¼ãĥĨãĤ£": 50247,
+      "ĠãĤµãĥ¼ãĥĨãĤ£ãĥ¯ãĥ³": 50248,
+      "ĠÂłĠÂłĠÂłĠÂłĠÂłĠÂłĠÂłĠÂł": 50249,
+      "ĠAdinida": 50250,
+      "ItemTracker": 50251,
+      "ĠDevOnline": 50252,
+      "ĠÂłÂł": 50253,
+      "<?": 50254,
+      "*=-": 50255,
+      "ÃĽÃĽ": 50256,
+      "ĠEntityItem": 50257,
+      "EngineDebug": 50258,
+      "ĠstrutConnector": 50259,
+      "<|endoftext|>": 50260,
+      "madeupword0000": 50261,
+      "madeupword0001": 50262,
+      "madeupword0002": 50263,
+      "<mask>": 50264
+    },
+    "merges": [
+      "Ġ t",
+      "Ġ a",
+      "h e",
+      "i n",
+      "r e",
+      "o n",
+      "Ġsn ipers",
+      "Ġre verted",
+      "Ġconglomer ate",
+      "T erry",
+      "79 4",
+      "Ġhars her",
+      "Ġdes olate",
+      "ĠHit man",
+      "Comm ission",
+      "Ġ( /",
+      "âĢ¦ .\"",
+      "Com par",
+      "Ġampl ification",
+      "om inated",
+      "Ġreg ress",
+      "ĠColl ider",
+      "Ġinform ants",
+      "Ġg azed"
+    ]
+  }
+}

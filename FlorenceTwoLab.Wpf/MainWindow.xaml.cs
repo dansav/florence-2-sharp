@@ -1,14 +1,7 @@
-﻿using System.Text;
+﻿using System.IO;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using FlorenceTwoLab.Core;
+using Florence2.Net;
+using SixLabors.ImageSharp;
 
 namespace FlorenceTwoLab;
 
@@ -23,9 +16,35 @@ public partial class MainWindow : Window
         Loaded += MainWindow_Loaded;
     }
 
-    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        var florence2 = new Florence2();
-        florence2.Initialize();
+        var modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS") ?? throw new InvalidOperationException("FLORENCE2_ONNX_MODELS environment variable is not set.");
+
+        // var florence2 = new Florence2_Old();
+        // florence2.Initialize(modelDir);
+
+        var config = new Florence2Config
+        {
+            OnnxModelDirectory = modelDir,
+            MetadataDirectory = System.IO.Path.Combine(modelDir, ".."),
+        };
+        
+        var pipeline = new Florence2Pipeline(config);
+        
+        var testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA") ?? throw new InvalidOperationException("FLORENCE2_TEST_DATA environment variable is not set.");
+        var image = Image.Load(Path.Combine(testDataDir, "unnamed.jpg"));
+
+        var prompt = Florence2Tasks.CreateCaptionPrompt();
+
+        try
+        {
+            var result = await pipeline.ProcessAsync(image, prompt);
+            Console.WriteLine(result);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+            Application.Current.Shutdown();
+        }
     }
 }

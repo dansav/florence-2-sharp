@@ -4,4 +4,4 @@ bin/
 obj/
 /packages/
 
-.user
+*.user

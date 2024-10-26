@@ -2,11 +2,10 @@
 
 namespace FlorenceTwoLab.Core;
 
-public class Florence2
+public class Florence2Debug
 {
-    public void Initialize(string? modelDir = default)
+    public void DocumentInputsAndOutputs(string? modelDir)
     {
-        modelDir ??= Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS") ?? throw new ArgumentNullException(nameof(modelDir));
         string[] models = [
             "decoder_model.onnx",
             "embed_tokens.onnx",

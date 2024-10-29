@@ -1,13 +1,10 @@
-﻿using System.IO;
-using System.Windows;
+using System;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Florence2.Net;
-using SixLabors.ImageSharp;
 
-namespace FlorenceTwoLab;
+namespace FlorenceTwoLab.Desktop;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
     public MainWindow()
@@ -16,7 +13,7 @@ public partial class MainWindow : Window
         Loaded += MainWindow_Loaded;
     }
 
-    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private async void MainWindow_Loaded(object? sender, RoutedEventArgs e)
     {
         var modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS") ?? throw new InvalidOperationException("FLORENCE2_ONNX_MODELS environment variable is not set.");
 
@@ -32,7 +29,7 @@ public partial class MainWindow : Window
         var pipeline = new Florence2Pipeline(config);
         
         var testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA") ?? throw new InvalidOperationException("FLORENCE2_TEST_DATA environment variable is not set.");
-        var image = Image.Load(Path.Combine(testDataDir, "unnamed.jpg"));
+        var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, "unnamed.jpg"));
 
         var prompt = Florence2Tasks.CreateCaptionPrompt();
 
@@ -44,7 +41,6 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             Console.WriteLine(exception);
-            Application.Current.Shutdown();
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlorenceTwoLab.Wpf", "FlorenceTwoLab.Wpf\FlorenceTwoLab.Wpf.csproj", "{DF97CD47-ADA7-45E0-AF4D-7AA7A2FCEB11}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlorenceTwoLab.Core", "FlorenceTwoLab.Core\FlorenceTwoLab.Core.csproj", "{C9420734-03AD-4EC4-BE70-504EA3A893EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlorenceTwoLab.Desktop", "FlorenceTwoLab.Desktop\FlorenceTwoLab.Desktop.csproj", "{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,13 +10,13 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DF97CD47-ADA7-45E0-AF4D-7AA7A2FCEB11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DF97CD47-ADA7-45E0-AF4D-7AA7A2FCEB11}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DF97CD47-ADA7-45E0-AF4D-7AA7A2FCEB11}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DF97CD47-ADA7-45E0-AF4D-7AA7A2FCEB11}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C9420734-03AD-4EC4-BE70-504EA3A893EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C9420734-03AD-4EC4-BE70-504EA3A893EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9420734-03AD-4EC4-BE70-504EA3A893EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9420734-03AD-4EC4-BE70-504EA3A893EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

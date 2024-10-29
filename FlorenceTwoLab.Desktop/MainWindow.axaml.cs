@@ -1,5 +1,8 @@
 using System;
+using System.IO;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
 using Florence2.Net;
 
@@ -15,7 +18,20 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object? sender, RoutedEventArgs e)
     {
-        var modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS") ?? throw new InvalidOperationException("FLORENCE2_ONNX_MODELS environment variable is not set.");
+        // foreach (var value in Enum.GetValues<Environment.SpecialFolder>())
+        // {
+        //     var folder = Environment.GetFolderPath(value);
+        //     Console.WriteLine($"{value}: {folder}");
+        // }
+        // return;
+
+        var modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS");
+        if (string.IsNullOrEmpty(modelDir))
+        {
+            var helper = new DataHelper();
+            await helper.EnsureModelFilesAsync();
+            modelDir = helper.ModelDirectory;
+        }
 
         // var florence2 = new Florence2_Old();
         // florence2.Initialize(modelDir);
@@ -28,8 +44,17 @@ public partial class MainWindow : Window
         
         var pipeline = new Florence2Pipeline(config);
         
-        var testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA") ?? throw new InvalidOperationException("FLORENCE2_TEST_DATA environment variable is not set.");
-        var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, "unnamed.jpg"));
+        var testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA");
+        if (string.IsNullOrEmpty(testDataDir))
+        {
+            var helper = new DataHelper();
+            await helper.EnsureTestDataFilesAsync();
+            testDataDir = helper.TestDataDirectory;
+        }
+        
+        var testFile = Directory.GetFiles(testDataDir, "*.jpg")[0];
+        
+        var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
 
         var prompt = Florence2Tasks.CreateCaptionPrompt();
 
@@ -41,6 +66,10 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             Console.WriteLine(exception);
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.Shutdown();
+            }
         }
     }
 }

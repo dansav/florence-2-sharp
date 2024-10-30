@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
 using Florence2.Net;
+using FlorenceTwoLab.Core.Utils;
 
 namespace FlorenceTwoLab.Desktop;
 
@@ -28,7 +29,7 @@ public partial class MainWindow : Window
         var modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS");
         if (string.IsNullOrEmpty(modelDir))
         {
-            var helper = new DataHelper();
+            var helper = new ModelHelper();
             await helper.EnsureModelFilesAsync();
             modelDir = helper.ModelDirectory;
         }

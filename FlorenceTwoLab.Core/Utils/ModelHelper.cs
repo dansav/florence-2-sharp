@@ -1,17 +1,11 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
+namespace FlorenceTwoLab.Core.Utils;
 
-namespace FlorenceTwoLab.Desktop;
-
-public class DataHelper
+public class ModelHelper
 {
     private readonly string _dataDir;
-    private HttpClient _http;
+    private readonly HttpClient _http;
 
-    public DataHelper()
+    public ModelHelper()
     {
         _dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache",
             "florence2lab");
@@ -29,7 +23,6 @@ public class DataHelper
     }
 
     public string ModelDirectory => Path.Combine(_dataDir, "models");
-    public string TestDataDirectory => Path.Combine(_dataDir, "test_data");
 
     public async Task EnsureModelFilesAsync()
     {
@@ -61,27 +54,6 @@ public class DataHelper
 
                 Console.WriteLine($"Download of {modelFile} completed.");
             }
-        }
-    }
-
-    public async Task EnsureTestDataFilesAsync()
-    {
-        var url =
-            "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/transformers/tasks/car.jpg?download=true";
-
-        var testDataDir = TestDataDirectory;
-
-        if (!File.Exists(Path.Combine(testDataDir, "car.jpg")))
-        {
-            Directory.CreateDirectory(testDataDir);
-
-            Console.WriteLine($"{Environment.NewLine}Downloading test data...");
-
-            await using var stream = await _http.GetStreamAsync(url);
-            await using var fileStream = File.Open(Path.Combine(testDataDir, "car.jpg"), FileMode.Create);
-            await stream.CopyToAsync(fileStream);
-
-            Console.WriteLine("Download of test data completed.");
         }
     }
 

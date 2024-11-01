@@ -1,9 +1,21 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace Florence2.Net;
 
+/// <summary>
+/// Tokenizer for Florence-2 models using byte-pair encoding (BPE)
+/// </summary>
+/// <remarks>
+/// Vocabulary structure:
+/// - Base vocabulary: 50,265 tokens
+/// - Additional tokens: 1,024 tokens (including location tokens etc.)
+/// - Total vocabulary size: 51,289 tokens
+/// - BPE merge rules: 50,000
+/// - Special tokens: ~1,030 (all angle-bracketed tokens)
+/// </remarks>
 public class Florence2Tokenizer
 {
     private readonly Dictionary<string, int> _vocab;
@@ -18,13 +30,22 @@ public class Florence2Tokenizer
 
     public Florence2Tokenizer(Florence2Config config)
     {
-        var vocabPath = Path.Combine(config.MetadataDirectory, "vocab.json");
+        var baseVocabPath = Path.Combine(config.MetadataDirectory, "vocab.json");
+        var additionalVocabPath = Path.Combine(config.MetadataDirectory, "added_tokens.json");
         var mergesPath = Path.Combine(config.MetadataDirectory, "merges.txt");
         
-        _vocab = LoadVocabulary(vocabPath);
+        _vocab = LoadVocabulary(baseVocabPath, additionalVocabPath);
+        
+        // verify that all expected tokens are present
+        Debug.Assert(_vocab.Count == config.VocabSize); // 51289
+        
         _reverseVocab = CreateReverseVocabulary(_vocab);
-        _bpeMerges = LoadMerges(mergesPath);
-        _specialTokens = InitializeSpecialTokens();
+        
+        // verify that there are no missing token IDs
+        Debug.Assert(Enumerable.Range(0, _vocab.Count).All(i => _reverseVocab.ContainsKey(i)));
+        
+        _bpeMerges = LoadMerges(mergesPath); // 50_000 merges
+        _specialTokens = InitializeSpecialTokens(); // 1030 special tokens
     }
     
     /// <summary>
@@ -164,11 +185,31 @@ public class Florence2Tokenizer
         return "[UNK]"; // Return unknown token marker if ID not found
     }
 
-    private Dictionary<string, int> LoadVocabulary(string path)
+    private Dictionary<string, int> LoadVocabulary(string baseVocabPath, string additionalVocabPath)
     {
-        var jsonString = File.ReadAllText(path);
-        var vocab = JsonSerializer.Deserialize<Dictionary<string, int>>(jsonString);
-        return vocab ?? throw new InvalidOperationException("Failed to load vocabulary");
+        var jsonOptions = new JsonSerializerOptions
+        {
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
+
+        using var baseVocabFile = File.OpenRead(baseVocabPath);
+        var vocab = JsonSerializer.Deserialize<Dictionary<string, int>>(baseVocabFile, jsonOptions);
+        if (vocab is null) throw new InvalidOperationException("Failed to load base vocabulary");
+        Debug.Assert(vocab.Count == 50265); // 50_265 tokens 
+        
+        using var additionalVocabFile = File.OpenRead(additionalVocabPath);
+        var additionalVocab = JsonSerializer.Deserialize<Dictionary<string, int>>(additionalVocabFile, jsonOptions);
+        if (additionalVocab is null) throw new InvalidOperationException("Failed to load additional vocabulary");
+        Debug.Assert(additionalVocab.Count == 1024); // 1_024 tokens
+        
+        // concatenate the two dictionaries
+        foreach (var entry in additionalVocab)
+        {
+            vocab.Add(entry.Key, entry.Value);
+        }
+        
+        return vocab;
     }
     
     private Dictionary<int, string> CreateReverseVocabulary(Dictionary<string, int> vocab)
@@ -196,13 +237,24 @@ public class Florence2Tokenizer
 
     private Dictionary<string, int> InitializeSpecialTokens()
     {
-        return new Dictionary<string, int>
+        var tokens = new Dictionary<string, int>
         {
             {"<s>", BosTokenId},
             {"</s>", EosTokenId},
             {"<pad>", PadTokenId},
             {"<unk>", UnkTokenId}
         };
+        
+        // Add all tokens that use angle brackets as special tokens
+        foreach (var kvp in _vocab.Where(kvp => kvp.Key.StartsWith("<") && kvp.Key.EndsWith(">")))
+        {
+            if (!tokens.ContainsKey(kvp.Key))
+            {
+                tokens.Add(kvp.Key, kvp.Value);
+            }
+        }
+        
+        return tokens;
     }
 
     private Task<List<string>> PreProcessTextAsync(string text)

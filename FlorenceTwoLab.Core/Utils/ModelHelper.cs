@@ -1,3 +1,5 @@
+using Florence2.Net;
+
 namespace FlorenceTwoLab.Core.Utils;
 
 public class ModelHelper
@@ -24,9 +26,20 @@ public class ModelHelper
 
     public string ModelDirectory => Path.Combine(_dataDir, "models");
 
-    public async Task EnsureModelFilesAsync()
+    public async Task EnsureModelFilesAsync(string modelVariant = "base-ft")
     {
-        await EnsureMetadataFilesAsync();
+        switch (modelVariant)
+        {
+            case "base":
+            case "base-ft":
+            case "large":
+            case "large-ft":
+                break;
+            default:
+                throw new ArgumentException($"Invalid model variant '{modelVariant}'", nameof(modelVariant));
+        }
+
+        await EnsureMetadataFilesAsync(modelVariant);
 
         var modelDir = ModelDirectory;
 
@@ -46,9 +59,8 @@ public class ModelHelper
 
                 Console.WriteLine($"{Environment.NewLine}Downloading {modelFile}...");
 
-                // TODO: allow selecting "base" or "large"
-                await using var stream = await _http.GetStreamAsync(
-                    $"https://huggingface.co/onnx-community/Florence-2-base/resolve/main/onnx/{Path.GetFileName(modelFile)}?download=true");
+                var url = $"https://huggingface.co/onnx-community/Florence-2-{modelVariant}/resolve/main/onnx/{Path.GetFileName(modelFile)}?download=true";
+                await using var stream = await _http.GetStreamAsync(url);
                 await using var fileStream = File.Open(modelFile, FileMode.Create);
                 await stream.CopyToAsync(fileStream);
 
@@ -57,29 +69,25 @@ public class ModelHelper
         }
     }
 
-    private async Task EnsureMetadataFilesAsync()
+    private async Task EnsureMetadataFilesAsync(string modelVariant)
     {
-        var metadataDir = _dataDir;
+        var metadataFiles = Florence2Tokenizer.RequiredFiles.Select(file => Path.Combine(_dataDir, file));
 
-        string[] metadataFiles =
-        [
-            "vocab.json",
-            "merges.txt"
-        ];
-
-        foreach (var metadataFile in metadataFiles)
+        foreach (var metadataFilePath in metadataFiles)
         {
-            if (!File.Exists(Path.Combine(metadataDir, metadataFile)))
+            if (!File.Exists(metadataFilePath))
             {
-                Console.WriteLine($"{Environment.NewLine}Downloading metadata...");
+                var fileName = Path.GetFileName(metadataFilePath);
 
-                // https://huggingface.co/onnx-community/Florence-2-base/resolve/main/merges.txt?download=true
-                await using var stream = await _http.GetStreamAsync(
-                    $"https://huggingface.co/onnx-community/Florence-2-base/resolve/main/{metadataFile}?download=true");
-                await using var fileStream = File.Open(Path.Combine(metadataDir, metadataFile), FileMode.Create);
+                Console.WriteLine($"{Environment.NewLine}Downloading {fileName}...");
+
+                var url = $"https://huggingface.co/onnx-community/Florence-2-{modelVariant}/resolve/main/{fileName}?download=true";
+
+                await using var stream = await _http.GetStreamAsync(url);
+                await using var fileStream = File.Open(metadataFilePath, FileMode.Create);
                 await stream.CopyToAsync(fileStream);
 
-                Console.WriteLine("Download of metadata completed.");
+                Console.WriteLine($"Download of {Path.GetFileName(fileName)} completed.");
             }
         }
     }

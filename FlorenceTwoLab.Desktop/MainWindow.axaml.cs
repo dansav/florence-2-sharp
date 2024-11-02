@@ -14,28 +14,21 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        Console.SetOut(new ConsoleHelper(Console.Out, ScreenConsole));
+
         Loaded += MainWindow_Loaded;
     }
 
     private async void MainWindow_Loaded(object? sender, RoutedEventArgs e)
     {
-        // foreach (var value in Enum.GetValues<Environment.SpecialFolder>())
-        // {
-        //     var folder = Environment.GetFolderPath(value);
-        //     Console.WriteLine($"{value}: {folder}");
-        // }
-        // return;
-
-        var modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS");
+        string? modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS");
         if (string.IsNullOrEmpty(modelDir))
         {
             var helper = new ModelHelper();
             await helper.EnsureModelFilesAsync();
             modelDir = helper.ModelDirectory;
         }
-
-        // var florence2 = new Florence2_Old();
-        // florence2.Initialize(modelDir);
 
         var config = new Florence2Config
         {
@@ -44,8 +37,8 @@ public partial class MainWindow : Window
         };
         
         var pipeline = new Florence2Pipeline(config);
-        
-        var testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA");
+
+        string? testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA");
         if (string.IsNullOrEmpty(testDataDir))
         {
             var helper = new DataHelper();
@@ -54,7 +47,6 @@ public partial class MainWindow : Window
         }
         
         var testFile = Directory.GetFiles(testDataDir, "*.jpg")[0];
-        
         var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
 
         var prompt = Florence2Tasks.CreateCaptionPrompt();

@@ -18,6 +18,12 @@ namespace Florence2.Net;
 /// </remarks>
 public class Florence2Tokenizer
 {
+    private const string BaseVocabFileName = "vocab.json";
+    private const string AdditionalVocabFileName = "added_tokens.json";
+    private const string MergesFileName = "merges.txt";
+
+    public static  readonly string[] RequiredFiles = { BaseVocabFileName, AdditionalVocabFileName, MergesFileName };
+
     private readonly Dictionary<string, int> _vocab;
     private readonly Dictionary<int, string> _reverseVocab;
     private readonly List<(string First, string Second)> _bpeMerges;
@@ -30,9 +36,9 @@ public class Florence2Tokenizer
 
     public Florence2Tokenizer(Florence2Config config)
     {
-        var baseVocabPath = Path.Combine(config.MetadataDirectory, "vocab.json");
-        var additionalVocabPath = Path.Combine(config.MetadataDirectory, "added_tokens.json");
-        var mergesPath = Path.Combine(config.MetadataDirectory, "merges.txt");
+        var baseVocabPath = Path.Combine(config.MetadataDirectory, BaseVocabFileName);
+        var additionalVocabPath = Path.Combine(config.MetadataDirectory, AdditionalVocabFileName);
+        var mergesPath = Path.Combine(config.MetadataDirectory, MergesFileName);
         
         _vocab = LoadVocabulary(baseVocabPath, additionalVocabPath);
         

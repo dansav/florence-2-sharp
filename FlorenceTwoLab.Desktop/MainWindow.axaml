@@ -5,5 +5,10 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="FlorenceTwoLab.Desktop.MainWindow"
         Title="FlorenceTwoLab.Desktop">
-    Welcome to Avalonia!
+	<StackPanel>
+		<TextBlock>
+			Welcome to Avalonia!
+		</TextBlock>
+		<TextBlock x:Name="ScreenConsole" />
+	</StackPanel>
 </Window>

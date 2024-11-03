@@ -6,7 +6,7 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 namespace Florence2.Net;
 
 /// <summary>
-/// Tokenizer for Florence-2 models using byte-pair encoding (BPE)
+/// Tokenizer based on BERT, for the Florence-2 models using byte-pair encoding (BPE)
 /// </summary>
 /// <remarks>
 /// Vocabulary structure:
@@ -16,7 +16,7 @@ namespace Florence2.Net;
 /// - BPE merge rules: 50,000
 /// - Special tokens: ~1,030 (all angle-bracketed tokens)
 /// </remarks>
-public class Florence2Tokenizer
+public class BertTokenizer
 {
     private const string BaseVocabFileName = "vocab.json";
     private const string AdditionalVocabFileName = "added_tokens.json";
@@ -34,7 +34,7 @@ public class Florence2Tokenizer
     private const int PadTokenId = 1;  // <pad>
     private const int UnkTokenId = 3;  // <unk>
 
-    public Florence2Tokenizer(Florence2Config config)
+    public BertTokenizer(Florence2Config config)
     {
         var baseVocabPath = Path.Combine(config.MetadataDirectory, BaseVocabFileName);
         var additionalVocabPath = Path.Combine(config.MetadataDirectory, AdditionalVocabFileName);

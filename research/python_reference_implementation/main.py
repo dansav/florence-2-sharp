@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import onnxruntime as ort
 from PIL import Image
-from transformers import AutoTokenizer
+from transformers import BartTokenizer
 import matplotlib.pyplot as plt
 
 class Florence2Reference:
@@ -20,7 +20,7 @@ class Florence2Reference:
         self.decoder_session = ort.InferenceSession(f"./data/models/decoder_model.onnx")
         
         # Initialize tokenizer and special tokens (from config.json)
-        self.tokenizer = AutoTokenizer.from_pretrained("./data/tokenizer")
+        self.tokenizer = BartTokenizer.from_pretrained("./data/tokenizer")
         self.pad_token_id = 1
         self.bos_token_id = 0
         self.eos_token_id = 2

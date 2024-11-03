@@ -16,7 +16,7 @@ flowchart TB
 
     subgraph Language Processing
         txt_preproc["Prompt Preprocessing<br/>(handle &lt;CAPTION&gt; etc.)"]
-        txt_tok["BART Tokenizer"]
+        txt_tok["BART Tokenizer<br/>(with extended vocab)"]
         txt_embed["Text Embeddings"]
         txt_mask["Text Attention Mask"]
     end

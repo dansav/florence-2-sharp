@@ -37,12 +37,13 @@ public class Florence2Pipeline
         var projectedFeatures = ConcatenateTensors(visionFeatures, textFeatures, 1);
         var projectedAttentionMask = ConcatenateTensors(visionAttentionMask, textAttentionMask, 1);
         
-        var encodedText = await _modelRunner.RunEncoderAsync(projectedFeatures, projectedAttentionMask);
+        // 4. Run encoder to get hidden states for decoder
+        var encoderHiddenStates = await _modelRunner.RunEncoderAsync(projectedFeatures, projectedAttentionMask);
 
-        // 3. Decoder Path
-        var decoderOutput = await _modelRunner.RunDecoderAsync(projectedFeatures, encodedText);
+        // 5. Decoder in autoregressive mode to generate output text
+        var decoderOutput = await _modelRunner.RunDecoderAsync(encoderHiddenStates, projectedAttentionMask);
 
-        // 4. Post-processing
+        // 6. Post-processing
         var taskType = GetTaskType(prompt);
         return await PostProcessResultAsync(decoderOutput, taskType);
     }

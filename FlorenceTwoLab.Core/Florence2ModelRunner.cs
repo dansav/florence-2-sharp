@@ -83,7 +83,7 @@ internal sealed class Florence2ModelRunner : IDisposable
         return encoderHiddenStates;
     }
 
-    public async Task<Tensor<float>> RunDecoderAsync(Tensor<float> encoderHiddenStates, Tensor<float> encoderAttentionMask)
+    public async Task<Tensor<float>> RunDecoderAsync(Tensor<float> encoderHiddenStates, Tensor<long> encoderAttentionMask)
     {
         // Step 4: Run decoder
         // Inputs:

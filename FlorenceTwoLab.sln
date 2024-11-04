@@ -11,23 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{CC6E71
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Research", "Research", "{84436BBF-FD80-4D74-BE7D-457CC052B6E7}"
-	ProjectSection(SolutionItems) = preProject
-		research\added_tokens (trimmed).json = research\added_tokens (trimmed).json
-		research\AutoProcessor.cs = research\AutoProcessor.cs
-		research\AutoTokenizer.cs = research\AutoTokenizer.cs
-		research\config.json = research\config.json
-		research\Florence2.cs = research\Florence2.cs
-		research\generation_config.json = research\generation_config.json
-		research\merges (trimmed).txt = research\merges (trimmed).txt
-		research\preprocessor_config.json = research\preprocessor_config.json
-		research\sample_inference.ipynb = research\sample_inference.ipynb
-		research\special_tokens_map (trimmed).json = research\special_tokens_map (trimmed).json
-		research\tokenizer (trimmed).json = research\tokenizer (trimmed).json
-		research\tokenizer_config (trimmed).json = research\tokenizer_config (trimmed).json
-		research\vocab (trimmed).json = research\vocab (trimmed).json
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +27,5 @@ Global
 		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{84436BBF-FD80-4D74-BE7D-457CC052B6E7} = {CC6E7184-B011-48D3-9295-717E920A5DFD}
 	EndGlobalSection
 EndGlobal

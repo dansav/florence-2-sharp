@@ -24,11 +24,11 @@ public class Florence2ImageProcessor
         
         // Florence-2 expects:
         // 1. Resize to square (768x768)
+        await ResizeImageAsync(processedImage);
+
         // 2. Convert to float [0,1]
         // 3. Normalize using mean/std
         // 4. Convert to NCHW format (batch, channels, height, width)
-        
-        await ResizeImageAsync(processedImage);
         return await CreateNormalizedTensorAsync(processedImage);
     }
 
@@ -57,7 +57,7 @@ public class Florence2ImageProcessor
     private async Task<DenseTensor<float>> CreateNormalizedTensorAsync(Image<Rgb24> image)
     {
         // Create tensor with shape [1, 3, height, width]
-        var tensor = new DenseTensor<float>(new[] { 1, 3, _config.ImageSize, _config.ImageSize });
+        var tensor = new DenseTensor<float>([1, 3, _config.ImageSize, _config.ImageSize]);
         
         await Task.Run(() =>
         {
@@ -74,7 +74,7 @@ public class Florence2ImageProcessor
                         var pixel = pixelRow[x];
                         
                         // Convert to float and normalize [0,1]
-                        float r = pixel.R * _config.RescaleFactor;
+                        float r = pixel.R * _config.RescaleFactor; // rescale factor is 1/255
                         float g = pixel.G * _config.RescaleFactor;
                         float b = pixel.B * _config.RescaleFactor;
                         

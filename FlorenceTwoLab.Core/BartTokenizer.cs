@@ -6,7 +6,7 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 namespace Florence2.Net;
 
 /// <summary>
-/// Tokenizer based on BERT, for the Florence-2 models using byte-pair encoding (BPE)
+/// Tokenizer based on BART, using byte-pair encoding (BPE) 
 /// </summary>
 /// <remarks>
 /// Vocabulary structure:
@@ -16,7 +16,7 @@ namespace Florence2.Net;
 /// - BPE merge rules: 50,000
 /// - Special tokens: ~1,030 (all angle-bracketed tokens)
 /// </remarks>
-public class BertTokenizer
+public class BartTokenizer
 {
     private const string BaseVocabFileName = "vocab.json";
     private const string AdditionalVocabFileName = "added_tokens.json";
@@ -34,7 +34,7 @@ public class BertTokenizer
     private const int PadTokenId = 1;  // <pad>
     private const int UnkTokenId = 3;  // <unk>
 
-    public BertTokenizer(Florence2Config config)
+    public BartTokenizer(Florence2Config config)
     {
         var baseVocabPath = Path.Combine(config.MetadataDirectory, BaseVocabFileName);
         var additionalVocabPath = Path.Combine(config.MetadataDirectory, AdditionalVocabFileName);
@@ -57,7 +57,7 @@ public class BertTokenizer
     /// <summary>
     /// Encodes text into token IDs
     /// </summary>
-    public async Task<Tensor<long>> EncodeAsync(string text)
+    public async Task<(Tensor<long>, Tensor<long>)> EncodeAsync(string text)
     {
         // Pre-process text and split into words
         var words = await PreProcessTextAsync(text);
@@ -74,7 +74,7 @@ public class BertTokenizer
         tokens.Add(EosTokenId); // Add end of sequence token
         
         // Convert to tensor
-        return CreateTensor(tokens);
+        return (CreateTensor(tokens), CreateTensor(tokens.Select(t =>t != PadTokenId ? 1 : 0).ToList()));
     }
     
     /// <summary>

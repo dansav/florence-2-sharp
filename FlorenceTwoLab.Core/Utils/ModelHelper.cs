@@ -71,7 +71,7 @@ public class ModelHelper
 
     private async Task EnsureMetadataFilesAsync(string modelVariant)
     {
-        var metadataFiles = Florence2Tokenizer.RequiredFiles.Select(file => Path.Combine(_dataDir, file));
+        var metadataFiles = BartTokenizer.RequiredFiles.Select(file => Path.Combine(_dataDir, file));
 
         foreach (var metadataFilePath in metadataFiles)
         {

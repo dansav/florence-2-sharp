@@ -238,7 +238,7 @@ class Florence2Reference:
         # Create combined attention mask
         image_attention_mask = np.ones((1, image_features.shape[1]), dtype=np.int64)
         combined_attention_mask = np.concatenate([image_attention_mask, attention_mask], axis=1)
-
+        print(f"Combined attention mask shape: {combined_attention_mask.shape}")
 
         # 4. Run through encoder
         encoder_outputs = self.encoder_session.run(

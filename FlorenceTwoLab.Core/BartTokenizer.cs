@@ -120,40 +120,6 @@ public class BartTokenizer
     }
     
     /// <summary>
-    /// Decode logits tensor to text by taking the highest probability token at each position
-    /// </summary>
-    public string DecodeLogits(Tensor<float> logits)
-    {
-        var tokens = new List<int>();
-
-        // Process each position in the sequence
-        for (int pos = 0; pos < logits.Dimensions[1]; pos++)
-        {
-            float maxProb = float.MinValue;
-            int maxToken = 0;
-
-            // Find highest probability token
-            for (int token = 0; token < logits.Dimensions[2]; token++)
-            {
-                var prob = logits[0, pos, token];
-                if (prob > maxProb)
-                {
-                    maxProb = prob;
-                    maxToken = token;
-                }
-            }
-
-            // Stop at end of sequence token
-            if (maxToken == EosTokenId)
-                break;
-
-            tokens.Add(maxToken);
-        }
-
-        return Decode(tokens.ToArray());
-    }
-    
-    /// <summary>
     /// Decode a tensor of token IDs back to text
     /// </summary>
     public string DecodeTokens(Tensor<long> tokenIds)
@@ -189,6 +155,17 @@ public class BartTokenizer
         }
 
         return "[UNK]"; // Return unknown token marker if ID not found
+    }
+
+    public IEnumerable<string> DebugTokens(IEnumerable<long> tokens)
+    {
+        foreach (var token in tokens)
+        {
+            if (_reverseVocab.TryGetValue((int)token, out var text   ))
+                yield return text;
+            else
+                yield return $"[UNK] ({token})";
+        }
     }
 
     private Dictionary<string, int> LoadVocabulary(string baseVocabPath, string additionalVocabPath)

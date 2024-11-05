@@ -6,6 +6,11 @@ public class Florence2Debug
 {
     public void DocumentInputsAndOutputs(string? modelDir)
     {
+        if (string.IsNullOrEmpty(modelDir))
+        {
+            throw new ArgumentNullException(nameof(modelDir));
+        }
+
         string[] models = [
             "decoder_model.onnx",
             "embed_tokens.onnx",

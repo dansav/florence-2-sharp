@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using System.Runtime.InteropServices;
+using SixLabors.ImageSharp;
 
 namespace Florence2.Net;
 
@@ -7,79 +8,96 @@ namespace Florence2.Net;
 /// </summary>
 public static class Florence2Tasks
 {
-    // Simple captioning tasks
-    public static string CreateCaptionPrompt() => "<CAPTION>";
-    public static string CreateDetailedCaptionPrompt() => "<DETAILED_CAPTION>";
-    public static string CreateMoreDetailedCaptionPrompt() => "<MORE_DETAILED_CAPTION>";
-    
-    // OCR related tasks
-    public static string CreateOcrPrompt() => "<OCR>";
-    public static string CreateOcrWithRegionsPrompt() => "<OCR_WITH_REGION>";
-    
-    // Object detection tasks
-    public static string CreateObjectDetectionPrompt() => "<OD>";
-    public static string CreateDenseRegionCaptionPrompt() => "<DENSE_REGION_CAPTION>";
-    public static string CreateRegionProposalPrompt() => "<REGION_PROPOSAL>";
-
-    // Region analysis tasks
-    public static string CreateRegionToDescriptionPrompt(Rectangle region, Size imageSize)
+    private static readonly Dictionary<Florence2TaskType, (string Token, string Prompt, bool RequiresRegion, bool RequiresSubPrompt)> TaskConfigurations = new()
     {
-        return $"<REGION_TO_DESCRIPTION>{region.CreateNormalizedRegionString(imageSize)}";
+        // Basic captioning
+        [Florence2TaskType.Caption] = ("<CAPTION>", "What does the image describe?", false, false),
+        [Florence2TaskType.DetailedCaption] = ("<DETAILED_CAPTION>", "Describe in detail what is shown in the image.", false, false),
+        [Florence2TaskType.MoreDetailedCaption] = ("<MORE_DETAILED_CAPTION>", "Describe with a paragraph what is shown in the image.", false, false),
+        [Florence2TaskType.Ocr] = ("<OCR>", "What is the text in the image?", false, false),
+        [Florence2TaskType.OcrWithRegions] = ("<OCR_WITH_REGION>", "What is the text in the image, with regions?", false, false),
+        [Florence2TaskType.ObjectDetection] = ("<OD>", "Locate the objects with category name in the image.", false, false),
+        [Florence2TaskType.DenseRegionCaption] = ("<DENSE_REGION_CAPTION>", "Locate the objects in the image, with their descriptions.", false, false),
+        [Florence2TaskType.RegionProposal] = ("<REGION_PROPOSAL>", "Locate the region proposals in the image.", false, false),
+
+        // Grounding and detection
+        [Florence2TaskType.CaptionToGrounding] = ("<CAPTION_TO_PHRASE_GROUNDING>", "Locate the phrases in the caption: {0}", false, true),
+        [Florence2TaskType.ReferringExpressionSegmentation] = ("<REFERRING_EXPRESSION_SEGMENTATION>", "Locate {0} in the image with mask", false, true),
+        [Florence2TaskType.OpenVocabularyDetection] = ("<OPEN_VOCABULARY_DETECTION>", "Locate {0} in the image.", false, true),
+
+        // Region analysis
+        [Florence2TaskType.RegionToSegmentation] = ("<REGION_TO_SEGMENTATION>", "What is the polygon mask of region {0}", true, false),
+        [Florence2TaskType.RegionToCategory] = ("<REGION_TO_CATEGORY>", "What is the region {0}?", true, false),
+        [Florence2TaskType.RegionToDescription] = ("<REGION_TO_DESCRIPTION>", "What does the region {0} describe?", true, false),
+        [Florence2TaskType.RegionToOcr] = ("<REGION_TO_OCR>", "What text is in the region {0}?", true, false)
+    };
+
+    private static readonly Dictionary<string, Florence2TaskType> TaskTypeLookup = TaskConfigurations.ToDictionary(x => x.Value.Token, x => x.Key);
+
+    public static Florence2Query CreateQuery(string taskToken)
+    {
+        if (!TaskTypeLookup.TryGetValue(taskToken, out var taskType))
+            throw new ArgumentException($"Unsupported task token: {taskToken}");
+
+        return CreateQuery(taskType);
     }
 
-    public static string CreateRegionToSegmentationPrompt(Rectangle region, Size imageSize)
+    public static Florence2Query CreateQuery(Florence2TaskType taskType)
     {
-        return $"<REGION_TO_SEGMENTATION>{region.CreateNormalizedRegionString(imageSize)}";
+        if (!TaskConfigurations.TryGetValue(taskType, out var config))
+            throw new ArgumentException($"Unsupported task type: {taskType}");
+
+        if (config.RequiresRegion)
+            throw new ArgumentException($"Task {taskType} requires region parameter");
+
+        if (config.RequiresSubPrompt)
+            throw new ArgumentException($"Task {taskType} requires sub-prompt parameter");
+
+        return new Florence2Query(taskType, config.Prompt);
     }
 
-    public static string CreateRegionToCategoryPrompt(Rectangle region, Size imageSize)
+    public static Florence2Query CreateQuery(Florence2TaskType taskType, Rectangle region, Size imageSize)
     {
-        return $"<REGION_TO_CATEGORY>{region.CreateNormalizedRegionString(imageSize)}";
+        if (!TaskConfigurations.TryGetValue(taskType, out var config))
+            throw new ArgumentException($"Unsupported task type: {taskType}");
+
+        if (!config.RequiresRegion)
+            throw new ArgumentException($"Task {taskType} does not handle region parameter");
+
+        var regionString = region.CreateNormalizedRegionString(imageSize);
+        return new Florence2Query(taskType, string.Format(config.Prompt, regionString));
     }
 
-    public static string CreateRegionToOcrPrompt(Rectangle region, Size imageSize)
+    public static Florence2Query CreateQuery(Florence2TaskType taskType, string subPrompt)
     {
-        return $"<REGION_TO_OCR>{region.CreateNormalizedRegionString(imageSize)}";
-    }
+        if (!TaskConfigurations.TryGetValue(taskType, out var config))
+            throw new ArgumentException($"Unsupported task type: {taskType}");
 
-    // Grounding and referring expression tasks
-    public static string CreateCaptionToGroundingPrompt(string caption)
-    {
-        return $"<CAPTION_TO_PHRASE_GROUNDING>{caption}";
-    }
+        if (!config.RequiresSubPrompt)
+            throw new ArgumentException($"Task {taskType} does not handle input parameter");
 
-    public static string CreateReferringExpressionSegmentationPrompt(string expression)
-    {
-        return $"<REFERRING_EXPRESSION_SEGMENTATION>{expression}";
-    }
-
-    public static string CreateOpenVocabularyDetectionPrompt(string query)
-    {
-        return $"<OPEN_VOCABULARY_DETECTION>{query}";
+        return new Florence2Query(taskType, string.Format(config.Prompt, subPrompt));
     }
 
     // Cascaded tasks
-    public static async Task<string> CreateCaptionWithGroundingPrompt(Florence2Pipeline pipeline, Image image)
+    public static async Task<Florence2Query> CreateQueryWithGroundingAsync(Florence2TaskType taskType, Florence2Pipeline pipeline, Image image)
     {
+        switch (taskType)
+        {
+            case Florence2TaskType.Caption:
+            case Florence2TaskType.DetailedCaption:
+            case Florence2TaskType.MoreDetailedCaption:
+                break;
+            default:
+                throw new ArgumentException($"Unsupported task type: {taskType}");
+        }
+
         // First get a caption
-        var captionResult = await pipeline.ProcessAsync(image, CreateCaptionPrompt());
+        var initialQuery = CreateQuery(taskType);
+        var captionResult = await pipeline.ProcessAsync(image, initialQuery);
         var caption = captionResult.ToString();
 
         // Then create grounding prompt with that caption
-        return CreateCaptionToGroundingPrompt(caption);
-    }
-
-    public static async Task<string> CreateDetailedCaptionWithGroundingPrompt(Florence2Pipeline pipeline, Image image)
-    {
-        var captionResult = await pipeline.ProcessAsync(image, CreateDetailedCaptionPrompt());
-        var caption = captionResult.ToString();
-        return CreateCaptionToGroundingPrompt(caption);
-    }
-
-    public static async Task<string> CreateMoreDetailedCaptionWithGroundingPrompt(Florence2Pipeline pipeline, Image image)
-    {
-        var captionResult = await pipeline.ProcessAsync(image, CreateMoreDetailedCaptionPrompt());
-        var caption = captionResult.ToString();
-        return CreateCaptionToGroundingPrompt(caption);
+        return CreateQuery(Florence2TaskType.CaptionToGrounding, caption);
     }
 }

@@ -32,7 +32,7 @@ public partial class MainWindow : Window
 
         var config = new Florence2Config
         {
-            OnnxModelDirectory = modelDir,
+            OnnxModelDirectory = modelDir ?? throw new NullReferenceException("A model directory is required"),
             MetadataDirectory = System.IO.Path.Combine(modelDir, ".."),
         };
         
@@ -49,11 +49,11 @@ public partial class MainWindow : Window
         var testFile = Directory.GetFiles(testDataDir, "*.jpg")[0];
         var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
 
-        var prompt = Florence2Tasks.CreateCaptionPrompt();
+        var query = Florence2Tasks.CreateQuery(Florence2TaskType.Caption);
 
         try
         {
-            var result = await pipeline.ProcessAsync(image, prompt);
+            var result = await pipeline.ProcessAsync(image, query);
             Console.WriteLine(result);
         }
         catch (Exception exception)

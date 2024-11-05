@@ -2,8 +2,8 @@
 
 public sealed class Florence2Config
 {
-    public string OnnxModelDirectory { get; } = "Models";
-    public string MetadataDirectory { get; } = "Utils";
+    public string OnnxModelDirectory { get; init; } = "Models";
+    public string MetadataDirectory { get; init; } = "Utils";
 
     public int ImageSize { get; } = 768;
     public float[] ImageMean { get; } = [0.485f, 0.456f, 0.406f];

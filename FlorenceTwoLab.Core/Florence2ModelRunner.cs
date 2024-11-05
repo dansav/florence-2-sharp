@@ -1,4 +1,5 @@
-﻿using Microsoft.ML.OnnxRuntime;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace Florence2.Net;
@@ -83,22 +84,92 @@ internal sealed class Florence2ModelRunner : IDisposable
         return encoderHiddenStates;
     }
 
-    public async Task<Tensor<float>> RunDecoderAsync(Tensor<float> encoderHiddenStates, Tensor<long> encoderAttentionMask)
+    public async Task<IReadOnlyCollection<long>> RunDecoderAsync(Tensor<float> encoderHiddenStates, Tensor<long> encoderAttentionMask, int maxLength = 1024)
     {
-        // Step 4: Run decoder
-        // Inputs:
-        // - encoder_hidden_states [batch_size, encoder_sequence_length, 768]
-        // - encoder_attention_mask [batch_size, encoder_sequence_length]
-        // - inputs_embeds [batch_size, decoder_sequence_length, 768]
-        var decoderInputs = new List<NamedOnnxValue>
-        {
-            NamedOnnxValue.CreateFromTensor("encoder_hidden_states", encoderHiddenStates),
-            NamedOnnxValue.CreateFromTensor("encoder_attention_mask", encoderAttentionMask),
-            NamedOnnxValue.CreateFromTensor("inputs_embeds", decoderInputEmbeddings)
-        };
+        // this value comes from the "config.json" of the "onnx-community/Florence-2-*" repo.
+        const int DecoderStartTokenId = 2; // Initialize with decoder start token (end token?)
+        const int EosTokenId = 2; // End of sentence token, TODO: we could get this from the tokenizer
 
-        var decoderOutput = await RunInferenceAsync(_decoder, decoderInputs);
-        var logits = decoderOutput.First(o => o.Name == "logits").AsTensor<float>();
+        // Initialize with decoder start token
+        var generatedTokens = new List<long> { DecoderStartTokenId };
+
+        // dry run???
+        {
+            // Create decoder inputs from current tokens
+            var decoderInputIds = new DenseTensor<long>(
+                generatedTokens.ToArray(),
+                [1, generatedTokens.Count]
+            );
+
+            var decoderEmbeddings = await EmbedTokensAsync(decoderInputIds);
+
+            // Run decoder
+            NamedOnnxValue[] decoderInputs =
+            [
+                NamedOnnxValue.CreateFromTensor("encoder_hidden_states", encoderHiddenStates),
+                NamedOnnxValue.CreateFromTensor("encoder_attention_mask", encoderAttentionMask),
+                NamedOnnxValue.CreateFromTensor("inputs_embeds", decoderEmbeddings)
+            ];
+
+            var outputs = await RunInferenceAsync(_decoder, decoderInputs);
+            var logits = outputs.First(o => o.Name == "logits").AsTensor<float>();
+        }
+
+        for (var i = 0; i < maxLength; i++)
+        {
+            // Create decoder inputs from current tokens
+            var decoderInputIds = new DenseTensor<long>(
+                generatedTokens.ToArray(),
+                [1, generatedTokens.Count]
+            );
+
+            var decoderEmbeddings = await EmbedTokensAsync(decoderInputIds);
+
+            // Run decoder
+            NamedOnnxValue[] decoderInputs =
+            [
+                NamedOnnxValue.CreateFromTensor("encoder_hidden_states", encoderHiddenStates),
+                NamedOnnxValue.CreateFromTensor("encoder_attention_mask", encoderAttentionMask),
+                NamedOnnxValue.CreateFromTensor("inputs_embeds", decoderEmbeddings)
+            ];
+
+            var outputs = await RunInferenceAsync(_decoder, decoderInputs);
+            var logits = outputs.First(o => o.Name == "logits").AsTensor<float>();
+
+            // Get next token (greedy selection from last position)
+            var nextToken = GetNextToken(logits);
+
+            // Stop if we hit EOS token
+            if (nextToken == EosTokenId)
+                break;
+
+            generatedTokens.Add(nextToken);
+        }
+
+        return generatedTokens;
+    }
+
+    private static long GetNextToken(Tensor<float> logits)
+    {
+        // Get last position logits
+        var lastLogits = logits.Dimensions[1] - 1;
+        var vocabSize = logits.Dimensions[2];
+
+        // Find max probability token
+        var maxProb = float.MinValue;
+        var maxToken = 0L;
+
+        for (int i = 0; i < vocabSize; i++)
+        {
+            var prob = logits[0, lastLogits, i];
+            if (prob > maxProb)
+            {
+                maxProb = prob;
+                maxToken = i;
+            }
+        }
+
+        return maxToken;
     }
 
     private static async Task<IDisposableReadOnlyCollection<DisposableNamedOnnxValue>> RunInferenceAsync(

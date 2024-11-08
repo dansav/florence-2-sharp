@@ -4,7 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
-using Florence2.Net;
+using FlorenceTwoLab.Core;
 using FlorenceTwoLab.Core.Utils;
 
 namespace FlorenceTwoLab.Desktop;
@@ -36,7 +36,7 @@ public partial class MainWindow : Window
             MetadataDirectory = System.IO.Path.Combine(modelDir, ".."),
         };
         
-        var pipeline = new Florence2Pipeline(config);
+        var pipeline = await Florence2Pipeline.CreateAsync(config);
 
         string? testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA");
         if (string.IsNullOrEmpty(testDataDir))

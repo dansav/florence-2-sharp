@@ -1,6 +1,6 @@
 ﻿using SixLabors.ImageSharp;
 
-namespace Florence2.Net;
+namespace FlorenceTwoLab.Core;
 
 /// <summary>
 /// Handles converting between image coordinates and Florence-2 location tokens

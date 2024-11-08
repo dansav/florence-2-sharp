@@ -1,7 +1,7 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace Florence2.Net;
+namespace FlorenceTwoLab.Core;
 
 public class ModelOutput : IDisposable
 {

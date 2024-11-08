@@ -1,7 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
 
-namespace Florence2.Net;
+namespace FlorenceTwoLab.Core;
 
 /// <summary>
 /// Provides methods to create properly formatted prompts for all Florence-2 tasks

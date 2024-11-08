@@ -1,9 +1,9 @@
-﻿using SixLabors.ImageSharp;
+﻿using Microsoft.ML.OnnxRuntime.Tensors;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace Florence2.Net;
+namespace FlorenceTwoLab.Core;
 
 public class Florence2ImageProcessor
 {

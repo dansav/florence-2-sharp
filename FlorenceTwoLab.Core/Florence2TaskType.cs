@@ -1,4 +1,4 @@
-﻿namespace Florence2.Net;
+﻿namespace FlorenceTwoLab.Core;
 
 /// <summary>
 /// Enumerates the supported Florence-2 task types

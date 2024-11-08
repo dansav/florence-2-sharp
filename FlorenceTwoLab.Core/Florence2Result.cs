@@ -1,6 +1,6 @@
 ﻿using SixLabors.ImageSharp;
 
-namespace Florence2.Net;
+namespace FlorenceTwoLab.Core;
 
 public sealed class Florence2Result
 {

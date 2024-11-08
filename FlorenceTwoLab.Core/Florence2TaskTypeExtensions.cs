@@ -1,4 +1,4 @@
-﻿namespace Florence2.Net;
+﻿namespace FlorenceTwoLab.Core;
 
 /// <summary>
 /// Extension methods for working with Florence2TaskType

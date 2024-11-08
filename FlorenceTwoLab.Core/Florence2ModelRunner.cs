@@ -1,8 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.ML.OnnxRuntime;
+﻿using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace Florence2.Net;
+namespace FlorenceTwoLab.Core;
 
 internal sealed class Florence2ModelRunner : IDisposable
 {

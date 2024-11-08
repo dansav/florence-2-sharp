@@ -1,5 +1,3 @@
-using Florence2.Net;
-
 namespace FlorenceTwoLab.Core.Utils;
 
 public class ModelHelper
@@ -59,7 +57,8 @@ public class ModelHelper
 
                 Console.WriteLine($"{Environment.NewLine}Downloading {modelFile}...");
 
-                var url = $"https://huggingface.co/onnx-community/Florence-2-{modelVariant}/resolve/main/onnx/{Path.GetFileName(modelFile)}?download=true";
+                var url =
+                    $"https://huggingface.co/onnx-community/Florence-2-{modelVariant}/resolve/main/onnx/{Path.GetFileName(modelFile)}?download=true";
                 await using var stream = await _http.GetStreamAsync(url);
                 await using var fileStream = File.Open(modelFile, FileMode.Create);
                 await stream.CopyToAsync(fileStream);
@@ -71,20 +70,25 @@ public class ModelHelper
 
     private async Task EnsureMetadataFilesAsync(string modelVariant)
     {
-        var metadataFiles = BartTokenizer.RequiredFiles.Select(file => Path.Combine(_dataDir, file));
+        string[] metadataFiles =
+        [
+            BartTokenizer.BaseVocabFileName,
+            BartTokenizer.MergesFileName,
+            BartTokenizer.AdditionalVocabFileName
+        ];
 
-        foreach (var metadataFilePath in metadataFiles)
+        foreach (var fileName in metadataFiles)
         {
-            if (!File.Exists(metadataFilePath))
+            var filePath = Path.Combine(_dataDir, fileName);
+            if (!File.Exists(filePath))
             {
-                var fileName = Path.GetFileName(metadataFilePath);
-
                 Console.WriteLine($"{Environment.NewLine}Downloading {fileName}...");
 
-                var url = $"https://huggingface.co/onnx-community/Florence-2-{modelVariant}/resolve/main/{fileName}?download=true";
+                var url =
+                    $"https://huggingface.co/onnx-community/Florence-2-{modelVariant}/resolve/main/{fileName}?download=true";
 
                 await using var stream = await _http.GetStreamAsync(url);
-                await using var fileStream = File.Open(metadataFilePath, FileMode.Create);
+                await using var fileStream = File.Open(filePath, FileMode.Create);
                 await stream.CopyToAsync(fileStream);
 
                 Console.WriteLine($"Download of {Path.GetFileName(fileName)} completed.");

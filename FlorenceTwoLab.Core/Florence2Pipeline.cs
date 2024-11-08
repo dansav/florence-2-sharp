@@ -1,23 +1,29 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 
-namespace Florence2.Net;
+namespace FlorenceTwoLab.Core;
 
 public class Florence2Pipeline
 {
-    private readonly Florence2Config _config;
     private readonly Florence2ImageProcessor _imageProcessor;
     private readonly BartTokenizer _tokenizer;
     private readonly Florence2ModelRunner _modelRunner;
 
-    public Florence2Pipeline(Florence2Config config)
+    private Florence2Pipeline(Florence2ImageProcessor imageProcessor, BartTokenizer tokenizer, Florence2ModelRunner modelRunner)
     {
-        _config = config;
-        _imageProcessor = new Florence2ImageProcessor(config);
-        _tokenizer = new BartTokenizer(config);
-        _modelRunner = new Florence2ModelRunner(config);
+        _imageProcessor = imageProcessor;
+        _tokenizer = tokenizer;
+        _modelRunner = modelRunner;
+    }
+
+    public static async Task<Florence2Pipeline> CreateAsync(Florence2Config config)
+    {
+        var imageProcessor = new Florence2ImageProcessor(config);
+        var tokenizer = await BartTokenizer.FromPretrainedAsync(config.MetadataDirectory);
+        var modelRunner = new Florence2ModelRunner(config);
+        
+        return new Florence2Pipeline(imageProcessor, tokenizer, modelRunner);
     }
 
     public async Task<Florence2Result> ProcessAsync(Image image, Florence2Query query)
@@ -33,11 +39,14 @@ public class Florence2Pipeline
         Debug.Assert(visionFeatures.Dimensions[1] == visionAttentionMask.Dimensions[1]);
 
         // 2. Text Path
-        var (tokenized, textAttentionMask) = await _tokenizer.EncodeAsync(prompt);
-        Console.WriteLine($"Input tokens: '{string.Join("', '", _tokenizer.DebugTokens(tokenized))}'");
+        var tokenized = _tokenizer.Tokenize(prompt);
+        Console.WriteLine($"Input tokens: '{string.Join("', '", tokenized)}'");
 
+        int[] shape = [ 1, tokenized.Count ];
+        var textAttentionMask = new DenseTensor<long>(tokenized.Select(t => t == BartTokenizer.PadToken ? 0L : 1L).ToArray(), shape);
+        var inputIds = new DenseTensor<long>(_tokenizer.ConvertTokensToIds(tokenized).Select(i => (long)i).ToArray(), shape);
 
-        var textFeatures = await _modelRunner.EmbedTokensAsync(tokenized);
+        var textFeatures = await _modelRunner.EmbedTokensAsync(inputIds);
         Debug.Assert(textFeatures.Dimensions[1] == textAttentionMask.Dimensions[1]);
 
         // 3. Concatenate vision and text features
@@ -50,7 +59,7 @@ public class Florence2Pipeline
         // 5. Decoder in autoregressive mode to generate output text
         var decoderOutput = await _modelRunner.RunDecoderAsync(encoderHiddenStates, projectedAttentionMask);
 
-        var text = _tokenizer.Decode(decoderOutput.Select(f => (int)f).ToArray());
+        var text = _tokenizer.Decode(decoderOutput.Select(f => (int)f).ToList());
 
         // 6. Post-processing
         return await PostProcessResultAsync(text, taskType);
@@ -107,7 +116,7 @@ public class Florence2Pipeline
             Florence2TaskType.Caption or
                 Florence2TaskType.DetailedCaption or
                 Florence2TaskType.MoreDetailedCaption or
-                Florence2TaskType.Ocr => new Florence2Result{ TaskType = taskType, Text = modelOutput },
+                Florence2TaskType.Ocr => new Florence2Result { TaskType = taskType, Text = modelOutput },
 
             // Detection tasks
             Florence2TaskType.ObjectDetection or

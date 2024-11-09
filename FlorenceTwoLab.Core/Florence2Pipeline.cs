@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
+using System.Reflection.Emit;
+using System.Text.RegularExpressions;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 
 namespace FlorenceTwoLab.Core;
 
-public class Florence2Pipeline
+public partial class Florence2Pipeline
 {
     private readonly ImageProcessor _imageProcessor;
     private readonly BartTokenizer _tokenizer;
@@ -62,7 +64,7 @@ public class Florence2Pipeline
         var text = _tokenizer.Decode(decoderOutput.Select(f => (int)f).ToList());
 
         // 6. Post-processing
-        return await PostProcessResultAsync(text, taskType);
+        return await PostProcessResultAsync(text, taskType, true, image.Width, image.Height);
     }
 
     /// <summary>
@@ -108,7 +110,7 @@ public class Florence2Pipeline
         return result;
     }
 
-    private async Task<Florence2Result> PostProcessResultAsync(string modelOutput, Florence2TaskType taskType)
+    private async Task<Florence2Result> PostProcessResultAsync(string modelOutput, Florence2TaskType taskType, bool imageWasPadded, int imageWidth, int imageHeight)
     {
         return taskType switch
         {
@@ -120,7 +122,7 @@ public class Florence2Pipeline
 
             // Detection tasks
             Florence2TaskType.ObjectDetection or
-                Florence2TaskType.DenseRegionCaption => await ProcessDetectionResultAsync(taskType, modelOutput),
+                Florence2TaskType.DenseRegionCaption => await ProcessDetectionResultAsync(taskType, modelOutput, imageWasPadded, imageWidth, imageHeight),
 
             // Region tasks
             Florence2TaskType.RegionToDescription or
@@ -135,10 +137,34 @@ public class Florence2Pipeline
         };
     }
 
-    private Task<Florence2Result> ProcessDetectionResultAsync(Florence2TaskType taskType, string modelOutput)
+    private async Task<Florence2Result> ProcessDetectionResultAsync(Florence2TaskType taskType, string modelOutput, bool imageWasPadded, int imageWidth, int imageHeight)
     {
         // TODO: Implement detection result processing
-        throw new NotImplementedException();
+        // example data: </s><s>car<loc_54><loc_375><loc_906><loc_707>door<loc_710><loc_276><loc_908><loc_537>wheel<loc_708><loc_557><loc_865><loc_704><loc_147><loc_563><loc_305><loc_705>
+        
+        // regex that parses one or more "(category)<loc_(x1)><loc_(y1)><loc_(x2)><loc_(y2)>"
+        var regex = CategoryAndRegionRegex();
+        (string Label, int X1, int Y1, int X2, int Y2)[] regions = regex.Matches(modelOutput)
+            .Select(m => (
+                m.Groups[1].Value,
+                int.Parse(m.Groups[2].Value),
+                int.Parse(m.Groups[3].Value),
+                int.Parse(m.Groups[4].Value),
+                int.Parse(m.Groups[5].Value)
+                ))
+            .ToArray();
+        
+        var labels = regions.Select(r => r.Label).ToList();
+        
+        var boundingBoxes = regions
+            .Select(r => new Rectangle(
+                (int)(r.X1 * 0.001f * imageWidth),
+                (int)(r.Y1 * 0.001f * imageHeight),
+                (int)((r.X2 - r.X1) * 0.001f * imageWidth),
+                (int)((r.Y2 - r.Y1) * 0.001f * imageHeight)))
+            .ToList();
+        
+        return new Florence2Result { TaskType = taskType, BoundingBoxes = boundingBoxes, Labels = labels };
     }
 
     private Task<Florence2Result> ProcessRegionResultAsync(Florence2TaskType taskType, string modelOutput)
@@ -152,4 +178,7 @@ public class Florence2Pipeline
         // TODO: Implement segmentation result processing
         throw new NotImplementedException();
     }
+
+    [GeneratedRegex(@"(\w+)<loc_(\d+)><loc_(\d+)><loc_(\d+)><loc_(\d+)>")]
+    private static partial Regex CategoryAndRegionRegex();
 }

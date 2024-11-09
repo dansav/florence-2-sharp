@@ -2,13 +2,37 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:desktop="clr-namespace:FlorenceTwoLab.Desktop"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="FlorenceTwoLab.Desktop.MainWindow"
+        x:DataType="desktop:MainViewModel" x:CompileBindings="True"
         Title="FlorenceTwoLab.Desktop">
-	<StackPanel>
-		<TextBlock>
-			Welcome to Avalonia!
-		</TextBlock>
-		<TextBlock x:Name="ScreenConsole" />
-	</StackPanel>
+    <Window.Resources>
+        <desktop:ImageConverter x:Key="ImageConverter" />
+    </Window.Resources>
+    <Grid ColumnDefinitions="*,2*">
+        <StackPanel Grid.Column="0">
+            <ComboBox ItemsSource="{Binding PredefinedTasks}" SelectedItem="{Binding SelectedTask}"></ComboBox>
+            <TextBlock>Prompt</TextBlock>
+            <TextBox Text="{Binding CustomPrompt}" />
+            <SplitButton></SplitButton>
+            <TextBlock>Output</TextBlock>
+            <TextBox IsReadOnly="True" Text="{Binding Output}" TextWrapping="Wrap" MinLines="10" />
+            
+        </StackPanel>
+
+        <DockPanel Grid.Column="1">
+            <Grid DragDrop.AllowDrop="True">
+                <Border BorderBrush="Gray" BorderThickness="2" CornerRadius="20">
+                    <Border.Background>
+                        <SolidColorBrush Color="Gray" Opacity="0.1" />
+                    </Border.Background>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center">Drop Image Here</TextBlock>
+                </Border>
+                <Image Source="{Binding Preview, Converter={StaticResource ImageConverter}}" />
+            </Grid>
+        </DockPanel>
+    </Grid>
 </Window>

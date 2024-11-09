@@ -1,11 +1,7 @@
-using System;
-using System.IO;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Interactivity;
-using FlorenceTwoLab.Core;
-using FlorenceTwoLab.Core.Utils;
+using Avalonia.Platform.Storage;
 
 namespace FlorenceTwoLab.Desktop;
 
@@ -14,55 +10,56 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-
-        Console.SetOut(new ConsoleHelper(Console.Out, ScreenConsole));
+        
+        DataContext = new MainViewModel();
 
         Loaded += MainWindow_Loaded;
+        
+        AddHandler(DragDrop.DragOverEvent, DragOver);
+        AddHandler(DragDrop.DropEvent, Drop);
     }
 
-    private async void MainWindow_Loaded(object? sender, RoutedEventArgs e)
+    private async void Drop(object? sender, DragEventArgs e)
     {
-        string? modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS");
-        if (string.IsNullOrEmpty(modelDir))
+        if (e.Data.Contains(DataFormats.Files) && DataContext is MainViewModel viewModel)
         {
-            var helper = new ModelHelper();
-            await helper.EnsureModelFilesAsync();
-            modelDir = helper.ModelDirectory;
-        }
-
-        var config = new Florence2Config
-        {
-            OnnxModelDirectory = modelDir ?? throw new NullReferenceException("A model directory is required"),
-            MetadataDirectory = System.IO.Path.Combine(modelDir, ".."),
-        };
-        
-        var pipeline = await Florence2Pipeline.CreateAsync(config);
-
-        string? testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA");
-        if (string.IsNullOrEmpty(testDataDir))
-        {
-            var helper = new DataHelper();
-            await helper.EnsureTestDataFilesAsync();
-            testDataDir = helper.TestDataDirectory;
-        }
-        
-        var testFile = Directory.GetFiles(testDataDir, "*.jpg")[0];
-        var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
-
-        var query = Florence2Tasks.CreateQuery(Florence2TaskType.Caption);
-
-        try
-        {
-            var result = await pipeline.ProcessAsync(image, query);
-            Console.WriteLine(result);
-        }
-        catch (Exception exception)
-        {
-            Console.WriteLine(exception);
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            var items = e.Data.GetFiles() ?? System.Array.Empty<IStorageItem>();
+            foreach (var item in items)
             {
-                desktop.Shutdown();
+                if (item is IStorageFile file)
+                {
+                        await using var stream = await file.OpenReadAsync();
+                        await viewModel.LoadImageAsync(stream);
+                        return;
+                }
+                
+                if (item is IStorageFolder folder)
+                {
+                    await foreach (var item2 in folder.GetItemsAsync())
+                    {
+                        if (item2 is IStorageFile file2)
+                        {
+                            await using var stream = await file2.OpenReadAsync();
+                            await viewModel.LoadImageAsync(stream);
+                            return;
+                        }
+                    }
+                }
             }
         }
     }
+
+    private void DragOver(object? sender, DragEventArgs e)
+    {
+        
+    }
+
+    private void MainWindow_Loaded(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel viewModel)
+        {
+           // viewModel.All();
+        }
+    }
 }
+

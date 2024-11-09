@@ -1,5 +1,6 @@
 ﻿# Models
 
+These are the shapes of the inputs and outputs of the "base" model. 
 
 ### decoder_model.onnx:
 _Inputs:_

@@ -3,16 +3,16 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace FlorenceTwoLab.Core;
 
-internal sealed class Florence2ModelRunner : IDisposable
+internal sealed class ModelRunner : IDisposable
 {
     private readonly InferenceSession _decoder;
     private readonly InferenceSession _embedTokens;
     private readonly InferenceSession _encoder;
     private readonly InferenceSession _visionEncoder;
 
-    public Florence2ModelRunner(Florence2Config config)
+    public ModelRunner(IOnnxModelPathProvider pathProvider)
     {
-        var modelDirectory = config.OnnxModelDirectory;
+        var modelDirectory = pathProvider.OnnxModelDirectory;
 
         // Create separate inference sessions for each model component
         var sessionOptions = new SessionOptions
@@ -86,11 +86,11 @@ internal sealed class Florence2ModelRunner : IDisposable
     public async Task<IReadOnlyCollection<long>> RunDecoderAsync(Tensor<float> encoderHiddenStates, Tensor<long> encoderAttentionMask, int maxLength = 1024)
     {
         // this value comes from the "config.json" of the "onnx-community/Florence-2-*" repo.
-        const int DecoderStartTokenId = 2; // Initialize with decoder start token (end token?)
-        const int EosTokenId = 2; // End of sentence token, TODO: we could get this from the tokenizer
+        const int decoderStartTokenId = 2; // Initialize with decoder start token (end token?)
+        const int eosTokenId = 2; // End of sentence token, TODO: we could get this from the tokenizer
 
         // Initialize with decoder start token
-        var generatedTokens = new List<long> { DecoderStartTokenId };
+        var generatedTokens = new List<long> { decoderStartTokenId };
 
         // dry run???
         {
@@ -110,8 +110,8 @@ internal sealed class Florence2ModelRunner : IDisposable
                 NamedOnnxValue.CreateFromTensor("inputs_embeds", decoderEmbeddings)
             ];
 
-            var outputs = await RunInferenceAsync(_decoder, decoderInputs);
-            var logits = outputs.First(o => o.Name == "logits").AsTensor<float>();
+            _ = await RunInferenceAsync(_decoder, decoderInputs);
+            // var logits = outputs.First(o => o.Name == "logits").AsTensor<float>();
         }
 
         for (var i = 0; i < maxLength; i++)
@@ -139,7 +139,7 @@ internal sealed class Florence2ModelRunner : IDisposable
             var nextToken = GetNextToken(logits);
 
             // Stop if we hit EOS token
-            if (nextToken == EosTokenId)
+            if (nextToken == eosTokenId)
                 break;
 
             generatedTokens.Add(nextToken);
@@ -176,19 +176,5 @@ internal sealed class Florence2ModelRunner : IDisposable
         IReadOnlyCollection<NamedOnnxValue> inputs)
     {
         return await Task.Run(() => session.Run(inputs));
-    }
-
-    private static Tensor<long> CreateAttentionMask(int sequenceLength)
-    {
-        // Create attention mask tensor [batch_size, sequence_length]
-        var tensor = new DenseTensor<long>(new[] { 1, sequenceLength });
-
-        // Fill with 1s to attend to all tokens
-        for (int i = 0; i < sequenceLength; i++)
-        {
-            tensor[0, i] = 1;
-        }
-
-        return tensor;
     }
 }

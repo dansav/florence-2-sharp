@@ -6,11 +6,11 @@ namespace FlorenceTwoLab.Core;
 
 public class Florence2Pipeline
 {
-    private readonly Florence2ImageProcessor _imageProcessor;
+    private readonly ImageProcessor _imageProcessor;
     private readonly BartTokenizer _tokenizer;
-    private readonly Florence2ModelRunner _modelRunner;
+    private readonly ModelRunner _modelRunner;
 
-    private Florence2Pipeline(Florence2ImageProcessor imageProcessor, BartTokenizer tokenizer, Florence2ModelRunner modelRunner)
+    private Florence2Pipeline(ImageProcessor imageProcessor, BartTokenizer tokenizer, ModelRunner modelRunner)
     {
         _imageProcessor = imageProcessor;
         _tokenizer = tokenizer;
@@ -19,9 +19,9 @@ public class Florence2Pipeline
 
     public static async Task<Florence2Pipeline> CreateAsync(Florence2Config config)
     {
-        var imageProcessor = new Florence2ImageProcessor(config);
+        var imageProcessor = new ImageProcessor();
         var tokenizer = await BartTokenizer.FromPretrainedAsync(config.MetadataDirectory);
-        var modelRunner = new Florence2ModelRunner(config);
+        var modelRunner = new ModelRunner(config);
         
         return new Florence2Pipeline(imageProcessor, tokenizer, modelRunner);
     }

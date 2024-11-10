@@ -33,14 +33,31 @@ public static class Florence2Tasks
 
     private static readonly Dictionary<string, Florence2TaskType> TaskTypeLookup = TaskConfigurations.ToDictionary(x => x.Value.Token, x => x.Key);
 
-    public static Florence2Query CreateQuery(string taskToken)
+    public static Florence2Query CreateQuery(string customPrompt)
     {
-        if (!TaskTypeLookup.TryGetValue(taskToken, out var taskType))
-            throw new ArgumentException($"Unsupported task token: {taskToken}");
-
-        return CreateQuery(taskType);
+        return new Florence2Query(Florence2TaskType.Caption, customPrompt);
     }
 
+    /// <summary>
+    /// Creates a query for the specified task type.
+    /// </summary>
+    /// <param name="taskType">
+    /// The task type. Supported types are:
+    /// - Caption
+    /// - DetailedCaption
+    /// - MoreDetailedCaption
+    /// - Ocr
+    /// - OcrWithRegions
+    /// - ObjectDetection
+    /// - DenseRegionCaption
+    /// - RegionProposal
+    /// </param>
+    /// <returns>
+    /// A query for the specified task type.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the task type is not supported.
+    /// </exception>
     public static Florence2Query CreateQuery(Florence2TaskType taskType)
     {
         if (!TaskConfigurations.TryGetValue(taskType, out var config))
@@ -55,6 +72,28 @@ public static class Florence2Tasks
         return new Florence2Query(taskType, config.Prompt);
     }
 
+    /// <summary>
+    /// Creates a query for the specified task type with the specified region. 
+    /// </summary>
+    /// <param name="taskType">
+    /// The task type. Supported types are:
+    /// - RegionToSegmentation
+    /// - RegionToCategory
+    /// - RegionToDescription
+    /// - RegionToOcr 
+    /// </param>
+    /// <param name="region">
+    /// The region of the image to query.
+    /// </param>
+    /// <param name="imageSize">
+    /// The original size of the image.
+    /// </param>
+    /// <returns>
+    /// A query for the specified task type with the specified region.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the task type is not supported.
+    /// </exception>
     public static Florence2Query CreateQuery(Florence2TaskType taskType, Rectangle region, Size imageSize)
     {
         if (!TaskConfigurations.TryGetValue(taskType, out var config))
@@ -67,6 +106,24 @@ public static class Florence2Tasks
         return new Florence2Query(taskType, string.Format(config.Prompt, regionString));
     }
 
+    /// <summary>
+    /// Creates a query for the specified task type with the specified sub-prompt. 
+    /// </summary>
+    /// <param name="taskType">
+    /// The task type. Supported types are:
+    /// - CaptionToGrounding
+    /// - ReferringExpressionSegmentation
+    /// - OpenVocabularyDetection 
+    /// </param>
+    /// <param name="subPrompt">
+    /// The sub-prompt to include in the query.
+    /// </param>
+    /// <returns>
+    /// A query for the specified task type with the specified sub-prompt.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the task type is not supported.
+    /// </exception>
     public static Florence2Query CreateQuery(Florence2TaskType taskType, string subPrompt)
     {
         if (!TaskConfigurations.TryGetValue(taskType, out var config))

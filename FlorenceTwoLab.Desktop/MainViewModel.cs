@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -8,40 +9,60 @@ using FlorenceTwoLab.Core;
 using FlorenceTwoLab.Core.Utils;
 using System.Linq;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp;
 
 namespace FlorenceTwoLab.Desktop;
 
 public partial class MainViewModel : ObservableObject
 {
+    private static readonly HashSet<string> _tasksWithCustomPrompt = new(["Custom"]);
+    
     [ObservableProperty]
     private IEnumerable<string> _predefinedTasks = new[] { "Custom" }.Concat(Enum.GetNames(typeof(Florence2TaskType)));
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanEditCustomPrompt))]
     private string _selectedTask;
 
     [ObservableProperty]
     private string? _customPrompt;
-
+    
     [ObservableProperty]
     private string? _output;
 
     [ObservableProperty]
     private SixLabors.ImageSharp.Image? _preview;
 
+    [ObservableProperty]
+    private bool _isPreviewVisible;
+
+    private Image? _loadedImage;
+
     public MainViewModel()
     {
-        SelectedTask = "Custom";
+        SelectedTask = Florence2TaskType.Caption.ToString();
     }
     
-    partial void OnSelectedTaskChanged(string value)
+    public bool CanEditCustomPrompt => _tasksWithCustomPrompt.Contains(SelectedTask);
+    
+    async partial void OnSelectedTaskChanged(string value)
     {
-        if (Preview is null) return;
-        RunAsync();
+        if (_loadedImage is null) return;
+        try
+        {
+            await RunAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+            throw;
+        }
     }
 
     public async Task LoadImageAsync(Stream stream)
     {
         var image = await SixLabors.ImageSharp.Image.LoadAsync(stream);
+        _loadedImage = image;
         Preview = image;
 
         await RunAsync();
@@ -76,30 +97,38 @@ public partial class MainViewModel : ObservableObject
         // var testFile = Directory.GetFiles(testDataDir, "*.jpg")[0];
         // var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
 
-        if (!Enum.TryParse<Florence2TaskType>(SelectedTask, out var selectedTask))
+        Florence2Query query;
+        if (Enum.TryParse<Florence2TaskType>(SelectedTask, out var selectedTask))
         {
-            // TODO: handle custom task type
-            Console.WriteLine("Invalid task type");
+            query = Florence2Tasks.CreateQuery(selectedTask);
+        }
+        else
+        {
+            query = new Florence2Query(Florence2TaskType.Caption, CustomPrompt ?? "");
         }
         
-        var query = Florence2Tasks.CreateQuery(selectedTask);
-
-        if (Preview is null)
+        if (_loadedImage is null)
         {
-            Console.WriteLine("No image loaded");
+            Debug.WriteLine("No image loaded");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(query.Prompt))
+        {
+            Debug.WriteLine("No prompt provided");
             return;
         }
         
         try
         {
-            var result = await pipeline.ProcessAsync(Preview, query);
-            Console.WriteLine(result);
+            var result = await pipeline.ProcessAsync(_loadedImage, query);
+            Debug.WriteLine(result);
             
             Output = result.ToString();
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception);
+            Debug.WriteLine(exception);
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.Shutdown();

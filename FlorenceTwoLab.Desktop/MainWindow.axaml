@@ -5,33 +5,48 @@
         xmlns:desktop="clr-namespace:FlorenceTwoLab.Desktop"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="FlorenceTwoLab.Desktop.MainWindow"
-        x:DataType="desktop:MainViewModel" x:CompileBindings="True"
+        x:DataType="desktop:MainViewModel"
+        x:CompileBindings="True"
         Title="FlorenceTwoLab.Desktop">
     <Window.Resources>
         <desktop:ImageConverter x:Key="ImageConverter" />
     </Window.Resources>
     <Grid ColumnDefinitions="*,2*">
-        <StackPanel Grid.Column="0">
-            <ComboBox ItemsSource="{Binding PredefinedTasks}" SelectedItem="{Binding SelectedTask}"></ComboBox>
-            <TextBlock>Prompt</TextBlock>
-            <TextBox Text="{Binding CustomPrompt}" />
-            <SplitButton></SplitButton>
+        <StackPanel Grid.Column="0" Margin="10">
+            <ComboBox x:Name="TaskSelector"
+                      ItemsSource="{Binding PredefinedTasks}"
+                      SelectedItem="{Binding SelectedTask}"
+                      HorizontalAlignment="Stretch"/>
+            <TextBlock Margin="0 10 0 0">Prompt</TextBlock>
+            <TextBox Text="{Binding CustomPrompt}" IsEnabled="{Binding CanEditCustomPrompt}" KeyDown="InputElement_OnKeyDown" />
+            
+            <Rectangle Margin="0 20 0 15"
+                       HorizontalAlignment="Stretch"
+                       Height="2"
+                       Fill="{StaticResource SystemBaseLowColor}" />
+            
             <TextBlock>Output</TextBlock>
             <TextBox IsReadOnly="True" Text="{Binding Output}" TextWrapping="Wrap" MinLines="10" />
-            
+
         </StackPanel>
 
         <DockPanel Grid.Column="1">
-            <Grid DragDrop.AllowDrop="True">
-                <Border BorderBrush="Gray" BorderThickness="2" CornerRadius="20">
+            <Grid DragDrop.AllowDrop="True" Margin="0 10 10 10">
+                <Border BorderBrush="Gray"
+                        BorderThickness="2"
+                        CornerRadius="10">
                     <Border.Background>
                         <SolidColorBrush Color="Gray" Opacity="0.1" />
                     </Border.Background>
                     <TextBlock
                         VerticalAlignment="Center"
-                        HorizontalAlignment="Center">Drop Image Here</TextBlock>
+                        HorizontalAlignment="Center">
+                        Drop Image Here
+                    </TextBlock>
                 </Border>
-                <Image Source="{Binding Preview, Converter={StaticResource ImageConverter}}" />
+                <Image Margin="5"
+                       Source="{Binding Preview, Converter={StaticResource ImageConverter}}"
+                       IsVisible="{Binding IsPreviewVisible}" />
             </Grid>
         </DockPanel>
     </Grid>

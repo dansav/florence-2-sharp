@@ -82,7 +82,8 @@ public partial class BartTokenizer
         return new BartTokenizer(encoder, decoder, bpeRanks, addedTokens);
     }
 
-    private static async Task<(Dictionary<string, int> encoder, Dictionary<int, string> decoder)> LoadVocabularyAsync(string vocabPath)
+    private static async Task<(Dictionary<string, int> encoder, Dictionary<int, string> decoder)> LoadVocabularyAsync(
+        string vocabPath)
     {
         var json = await File.ReadAllTextAsync(vocabPath);
         return await Task.Run(() =>
@@ -323,7 +324,7 @@ public partial class BartTokenizer
     public string Decode(List<int> ids, bool skipSpecialTokens = false)
     {
         var tokens = new List<string>();
-        foreach (var id in ids)
+        foreach (var id in ids.SkipWhile(i => i < 3)) // Skip initial special tokens
         {
             if (_decoder.ContainsKey(id))
             {

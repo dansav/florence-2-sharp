@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection.Emit;
-using System.Text.RegularExpressions;
+﻿using System.Reflection.Emit;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 
@@ -11,12 +9,21 @@ public partial class Florence2Pipeline
     private readonly ImageProcessor _imageProcessor;
     private readonly BartTokenizer _tokenizer;
     private readonly ModelRunner _modelRunner;
+    private readonly EncoderPreProcessor _encoderPreprocessor;
+    private readonly DecoderPostProcessor _postProcessor;
 
-    private Florence2Pipeline(ImageProcessor imageProcessor, BartTokenizer tokenizer, ModelRunner modelRunner)
+    private Florence2Pipeline(
+        ImageProcessor imageProcessor,
+        BartTokenizer tokenizer,
+        ModelRunner modelRunner,
+        EncoderPreProcessor encoderPreProcessor,
+        DecoderPostProcessor postProcessor)
     {
         _imageProcessor = imageProcessor;
         _tokenizer = tokenizer;
         _modelRunner = modelRunner;
+        _encoderPreprocessor = encoderPreProcessor;
+        _postProcessor = postProcessor;
     }
 
     public static async Task<Florence2Pipeline> CreateAsync(Florence2Config config)
@@ -24,36 +31,47 @@ public partial class Florence2Pipeline
         var imageProcessor = new ImageProcessor();
         var tokenizer = await BartTokenizer.FromPretrainedAsync(config.MetadataDirectory);
         var modelRunner = new ModelRunner(config);
-        
-        return new Florence2Pipeline(imageProcessor, tokenizer, modelRunner);
+        var encoderPreProcessor = new EncoderPreProcessor();
+        var postProcessor = new DecoderPostProcessor();
+
+        return new Florence2Pipeline(imageProcessor, tokenizer, modelRunner, encoderPreProcessor, postProcessor);
     }
 
     public async Task<Florence2Result> ProcessAsync(Image image, Florence2Query query)
     {
         var (taskType, prompt) = query;
 
-        // 1. Vision Path
+        if (string.IsNullOrWhiteSpace(prompt))
+        {
+            throw new ArgumentException("Prompt cannot be empty");
+        }
+
+        // 1. Vision
         var processedImage = await _imageProcessor.ProcessImageAsync(image);
         var visionFeatures = await _modelRunner.RunVisionEncoderAsync(processedImage);
-        var visionAttentionMask = new DenseTensor<long>(
-            Enumerable.Range(0, visionFeatures.Dimensions[1]).Select(f => 1L).ToArray(),
-            [1, visionFeatures.Dimensions[1]]);
-        Debug.Assert(visionFeatures.Dimensions[1] == visionAttentionMask.Dimensions[1]);
 
-        // 2. Text Path
+        // 2. Text
         var tokenized = _tokenizer.Tokenize(prompt);
         Console.WriteLine($"Input tokens: '{string.Join("', '", tokenized)}'");
 
-        int[] shape = [ 1, tokenized.Count ];
-        var textAttentionMask = new DenseTensor<long>(tokenized.Select(t => t == BartTokenizer.PadToken ? 0L : 1L).ToArray(), shape);
-        var inputIds = new DenseTensor<long>(_tokenizer.ConvertTokensToIds(tokenized).Select(i => (long)i).ToArray(), shape);
-
+        var inputIds = new DenseTensor<long>(_tokenizer.ConvertTokensToIds(tokenized).Select(i => (long)i).ToArray(),
+            [1, tokenized.Count]);
         var textFeatures = await _modelRunner.EmbedTokensAsync(inputIds);
-        Debug.Assert(textFeatures.Dimensions[1] == textAttentionMask.Dimensions[1]);
 
         // 3. Concatenate vision and text features
-        var projectedFeatures = ConcatenateTensors(visionFeatures, textFeatures, 1);
-        var projectedAttentionMask = ConcatenateTensors(visionAttentionMask, textAttentionMask, 1);
+        var (projectedFeatures, projectedAttentionMask) = _encoderPreprocessor.Process(visionFeatures, textFeatures, tokenized);
+        // var projectedFeatures = EncoderPreprocessor.ConcatenateTensors(visionFeatures, textFeatures, 1);
+        //
+        // var visionAttentionMask = new DenseTensor<long>(
+        //     Enumerable.Range(0, visionFeatures.Dimensions[1]).Select(f => 1L).ToArray(),
+        //     [1, visionFeatures.Dimensions[1]]);
+        // Debug.Assert(visionFeatures.Dimensions[1] == visionAttentionMask.Dimensions[1]);
+        //
+        // var textAttentionMask =
+        //     new DenseTensor<long>(tokenized.Select(t => t == BartTokenizer.PadToken ? 0L : 1L).ToArray(), shape);
+        // Debug.Assert(textFeatures.Dimensions[1] == textAttentionMask.Dimensions[1]);
+        //
+        // var projectedAttentionMask = EncoderPreprocessor.ConcatenateTensors(visionAttentionMask, textAttentionMask, 1);
 
         // 4. Run encoder to get hidden states for decoder
         var encoderHiddenStates = await _modelRunner.RunEncoderAsync(projectedFeatures, projectedAttentionMask);
@@ -64,121 +82,6 @@ public partial class Florence2Pipeline
         var text = _tokenizer.Decode(decoderOutput.Select(f => (int)f).ToList());
 
         // 6. Post-processing
-        return await PostProcessResultAsync(text, taskType, true, image.Width, image.Height);
+        return await _postProcessor.ProcessAsync(text, taskType, true, image.Width, image.Height);
     }
-
-    /// <summary>
-    /// Concatenate two tensors along a specified axis
-    /// </summary>
-    /// <param name="tensor1">The first tensor to concatenate</param>
-    /// <param name="tensor2">The second tensor to concatenate</param>
-    /// <param name="axis">The axis along which to concatenate the tensors.</param>
-    /// <typeparam name="T">The type of the tensor elements.</typeparam>
-    /// <returns>
-    /// The concatenated tensor.
-    /// </returns>
-    /// <exception cref="ArgumentException"></exception>
-    private DenseTensor<T> ConcatenateTensors<T>(Tensor<T> tensor1, Tensor<T> tensor2, int axis)
-    {
-        if (tensor1.Rank != tensor2.Rank)
-            throw new ArgumentException("Tensors must have the same number of dimensions");
-
-        if (axis < 0 || axis >= tensor1.Rank)
-            throw new ArgumentException("Invalid axis");
-
-        if (axis != 1)
-            throw new ArgumentException("Only concatenation along axis 1 is supported");
-
-        var newDimensions = tensor1.Dimensions.ToArray();
-        newDimensions[axis] += tensor2.Dimensions[axis];
-
-        var result = new DenseTensor<T>(newDimensions);
-
-        // Copy data from tensor1
-        for (int i = 0; i < tensor1.Length; i++)
-        {
-            result.SetValue(i, tensor1.GetValue(i));
-        }
-
-        // Copy data from tensor2
-        var offset = (int)tensor1.Length;
-        for (int i = 0; i < tensor2.Length; i++)
-        {
-            result.SetValue(offset + i, tensor2.GetValue(i));
-        }
-
-        return result;
-    }
-
-    private async Task<Florence2Result> PostProcessResultAsync(string modelOutput, Florence2TaskType taskType, bool imageWasPadded, int imageWidth, int imageHeight)
-    {
-        return taskType switch
-        {
-            // Text generation tasks (captions, OCR)
-            Florence2TaskType.Caption or
-                Florence2TaskType.DetailedCaption or
-                Florence2TaskType.MoreDetailedCaption or
-                Florence2TaskType.Ocr => new Florence2Result { TaskType = taskType, Text = modelOutput },
-
-            // Detection tasks
-            Florence2TaskType.ObjectDetection or
-                Florence2TaskType.DenseRegionCaption => await ProcessDetectionResultAsync(taskType, modelOutput, imageWasPadded, imageWidth, imageHeight),
-
-            // Region tasks
-            Florence2TaskType.RegionToDescription or
-                Florence2TaskType.RegionToCategory or
-                Florence2TaskType.RegionToOcr => await ProcessRegionResultAsync(taskType, modelOutput),
-
-            // Complex tasks
-            Florence2TaskType.ReferringExpressionSegmentation or
-                Florence2TaskType.RegionToSegmentation => await ProcessSegmentationResultAsync(taskType, modelOutput),
-
-            _ => throw new ArgumentException($"Unsupported task type: {taskType}")
-        };
-    }
-
-    private async Task<Florence2Result> ProcessDetectionResultAsync(Florence2TaskType taskType, string modelOutput, bool imageWasPadded, int imageWidth, int imageHeight)
-    {
-        // TODO: Implement detection result processing
-        // example data: </s><s>car<loc_54><loc_375><loc_906><loc_707>door<loc_710><loc_276><loc_908><loc_537>wheel<loc_708><loc_557><loc_865><loc_704><loc_147><loc_563><loc_305><loc_705>
-        
-        // regex that parses one or more "(category)<loc_(x1)><loc_(y1)><loc_(x2)><loc_(y2)>"
-        var regex = CategoryAndRegionRegex();
-        (string Label, int X1, int Y1, int X2, int Y2)[] regions = regex.Matches(modelOutput)
-            .Select(m => (
-                m.Groups[1].Value,
-                int.Parse(m.Groups[2].Value),
-                int.Parse(m.Groups[3].Value),
-                int.Parse(m.Groups[4].Value),
-                int.Parse(m.Groups[5].Value)
-                ))
-            .ToArray();
-        
-        var labels = regions.Select(r => r.Label).ToList();
-        
-        var boundingBoxes = regions
-            .Select(r => new Rectangle(
-                (int)(r.X1 * 0.001f * imageWidth),
-                (int)(r.Y1 * 0.001f * imageHeight),
-                (int)((r.X2 - r.X1) * 0.001f * imageWidth),
-                (int)((r.Y2 - r.Y1) * 0.001f * imageHeight)))
-            .ToList();
-        
-        return new Florence2Result { TaskType = taskType, BoundingBoxes = boundingBoxes, Labels = labels };
-    }
-
-    private Task<Florence2Result> ProcessRegionResultAsync(Florence2TaskType taskType, string modelOutput)
-    {
-        // TODO: Implement region result processing
-        throw new NotImplementedException();
-    }
-
-    private Task<Florence2Result> ProcessSegmentationResultAsync(Florence2TaskType taskType, string modelOutput)
-    {
-        // TODO: Implement segmentation result processing
-        throw new NotImplementedException();
-    }
-
-    [GeneratedRegex(@"(\w+)<loc_(\d+)><loc_(\d+)><loc_(\d+)><loc_(\d+)>")]
-    private static partial Regex CategoryAndRegionRegex();
 }

@@ -5,6 +5,65 @@
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+             <FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Light"
+                                       Accent="#c59f725b"
+                                       AltHigh="White"
+                                       AltLow="White"
+                                       AltMedium="White"
+                                       AltMediumHigh="White"
+                                       AltMediumLow="White"
+                                       BaseHigh="Black"
+                                       BaseLow="#887c909f"
+                                       BaseMedium="#cf325c77"
+                                       BaseMediumHigh="#ff00395d"
+                                       BaseMediumLow="#e7194a6a"
+                                       ChromeAltLow="#ff00395d"
+                                       ChromeBlackHigh="Black"
+                                       ChromeBlackLow="#887c909f"
+                                       ChromeBlackMedium="#ff00395d"
+                                       ChromeBlackMediumLow="#cf325c77"
+                                       ChromeDisabledHigh="#887c909f"
+                                       ChromeDisabledLow="#cf325c77"
+                                       ChromeGray="#e7194a6a"
+                                       ChromeHigh="#887c909f"
+                                       ChromeLow="#ffc4d8e6"
+                                       ChromeMedium="#e7b6cad8"
+                                       ChromeMediumLow="#ffc4d8e6"
+                                       ChromeWhite="White"
+                                       ListLow="#e7b6cad8"
+                                       ListMedium="#887c909f"
+                                       RegionColor="#d6e7f1ff" />
+                <ColorPaletteResources x:Key="Dark"
+                                       Accent="#ff762c0a"
+                                       AltHigh="Black"
+                                       AltLow="Black"
+                                       AltMedium="Black"
+                                       AltMediumHigh="Black"
+                                       AltMediumLow="Black"
+                                       BaseHigh="#ffdddddd"
+                                       BaseLow="#ff19435e"
+                                       BaseMedium="#ff83a3b7"
+                                       BaseMediumHigh="#ff9ebbcd"
+                                       BaseMediumLow="#ff4e738a"
+                                       ChromeAltLow="#ff9ebbcd"
+                                       ChromeBlackHigh="Black"
+                                       ChromeBlackLow="#ff9ebbcd"
+                                       ChromeBlackMedium="Black"
+                                       ChromeBlackMediumLow="Black"
+                                       ChromeDisabledHigh="#ff19435e"
+                                       ChromeDisabledLow="#ff83a3b7"
+                                       ChromeGray="#ff698ba1"
+                                       ChromeHigh="#ff698ba1"
+                                       ChromeLow="#ff051f3f"
+                                       ChromeMedium="#ff0a2847"
+                                       ChromeMediumLow="#ff143a56"
+                                       ChromeWhite="#ffdddddd"
+                                       ListLow="#ff0a2847"
+                                       ListMedium="#ff19435e"
+                                       RegionColor="#ff191f26" />
+            </FluentTheme.Palettes>
+        </FluentTheme>
     </Application.Styles>
 </Application>

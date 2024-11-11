@@ -47,7 +47,7 @@ public partial class Florence2Pipeline
         }
 
         // 1. Vision
-        var processedImage = await _imageProcessor.ProcessImageAsync(image);
+        var processedImage = await _imageProcessor.ProcessImageAsync(image, false);
         var visionFeatures = await _modelRunner.RunVisionEncoderAsync(processedImage);
 
         // 2. Text

@@ -173,7 +173,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes)
+    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes, IReadOnlyCollection<IReadOnlyCollection<Point>>? polygons = null)
     {
         return await Task.Run(() =>
         {
@@ -193,44 +193,18 @@ public partial class MainViewModel : ObservableObject
                         new PointF(rect.Right, rect.Bottom),
                         new PointF(rect.Left, rect.Bottom));
                     
-                    ctx.Fill( chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
-                    ctx.DrawText(label, SystemFonts.CreateFont("Arial", 12), foreground,
-                        new PointF(rect.Left + 5, rect.Bottom - 13));
-                }
-            });
-            return image2;
-        });
-    }
-    
-    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes, IReadOnlyCollection<IReadOnlyCollection<Point>> polygons)
-    {
-        return await Task.Run(() =>
-        {
-            var image2 = image.CloneAs<Rgba32>();
-            image2.Mutate(ctx =>
-            {
-                var chrome = new SolidBrush(Color.Red.WithAlpha(0.3f));
-                var poly = new SolidBrush(Color.Yellow.WithAlpha(0.7f));
-                var foreground = Color.White;
-
-                for (int i = 0; i < boundingBoxes.Count; i++)
-                {
-                    var rect = boundingBoxes[i];
-                    var label = labels[i];
-                    ctx.DrawPolygon(chrome, 2f,
-                        new PointF(rect.Left, rect.Top),
-                        new PointF(rect.Right, rect.Top),
-                        new PointF(rect.Right, rect.Bottom),
-                        new PointF(rect.Left, rect.Bottom));
-                    
-                    ctx.Fill( chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
+                    ctx.Fill(chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
                     ctx.DrawText(label, SystemFonts.CreateFont("Arial", 12), foreground,
                         new PointF(rect.Left + 5, rect.Bottom - 13));
                 }
 
-                foreach (var polygon in polygons)
+                if (polygons != null)
                 {
-                    ctx.DrawPolygon(poly, 2f, polygon.Select(p => new PointF(p.X, p.Y)).ToArray());
+                    var poly = new SolidBrush(Color.Yellow.WithAlpha(0.7f));
+                    foreach (var polygon in polygons)
+                    {
+                        ctx.DrawPolygon(poly, 2f, polygon.Select(p => new PointF(p.X, p.Y)).ToArray());
+                    }
                 }
             });
             return image2;

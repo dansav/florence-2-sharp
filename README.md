@@ -47,3 +47,15 @@ This project is licensed under the MIT License. See the LICENSE file for details
 For any questions or issues, please open an issue on GitHub or contact the project maintainers.
 
 Happy coding!
+
+## References
+
+The code in this repository was inspired by the following repositories:
+
+- [https://huggingface.co/onnx-community/Florence-2-*](https://huggingface.co/onnx-community/Florence-2-large)
+  
+  The model files and pre processor configurations
+
+- [https://huggingface.co/microsoft/Florence-2-*](https://huggingface.co/microsoft/Florence-2-large)
+
+  This repo uses PyTorch/transformers. I believe this is the official version. It has inspired the post processing of the model output.

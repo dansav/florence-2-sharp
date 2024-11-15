@@ -14,6 +14,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Point = SixLabors.ImageSharp.Point;
 
 namespace FlorenceTwoLab.Desktop;
 
@@ -130,8 +131,11 @@ public partial class MainViewModel : ObservableObject
                 case Florence2TaskType.MoreDetailedCaption:
                 case Florence2TaskType.Ocr:
                     Output = result.ToString();
+                    Preview = _loadedImage;
                     break;
                 case Florence2TaskType.OcrWithRegions:
+                    Output = string.Join(", ", result.Labels!);
+                    Preview = await DecorateAsync(_loadedImage, result.Labels!, result.BoundingBoxes!, result.Polygons!);
                     break;
                 case Florence2TaskType.ObjectDetection:
                     Output = string.Join(", ", result.Labels!);
@@ -169,7 +173,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes)
+    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes, IReadOnlyCollection<IReadOnlyCollection<Point>>? polygons = null)
     {
         return await Task.Run(() =>
         {
@@ -189,9 +193,18 @@ public partial class MainViewModel : ObservableObject
                         new PointF(rect.Right, rect.Bottom),
                         new PointF(rect.Left, rect.Bottom));
                     
-                    ctx.Fill( chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
+                    ctx.Fill(chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
                     ctx.DrawText(label, SystemFonts.CreateFont("Arial", 12), foreground,
                         new PointF(rect.Left + 5, rect.Bottom - 13));
+                }
+
+                if (polygons != null)
+                {
+                    var poly = new SolidBrush(Color.Yellow.WithAlpha(0.7f));
+                    foreach (var polygon in polygons)
+                    {
+                        ctx.DrawPolygon(poly, 2f, polygon.Select(p => new PointF(p.X, p.Y)).ToArray());
+                    }
                 }
             });
             return image2;

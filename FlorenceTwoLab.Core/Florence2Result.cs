@@ -14,7 +14,7 @@ public sealed class Florence2Result
     public List<string>? Labels { get; set; }
     
     // Segmentation output
-    public List<List<Point>>? Polygons { get; set; }
+    public IReadOnlyCollection<IReadOnlyCollection<Point>>? Polygons { get; set; }
     
     public override string ToString()
     {
@@ -29,8 +29,8 @@ public sealed class Florence2Result
             Florence2TaskType.DenseRegionCaption => Text ?? string.Empty,
             Florence2TaskType.RegionProposal => string.Join(", ", (BoundingBoxes ?? Enumerable.Empty<Rectangle>()).Select(r => r.ToString())),
             Florence2TaskType.CaptionToGrounding => Text ?? string.Empty,
-            Florence2TaskType.ReferringExpressionSegmentation => string.Join(", ", (Polygons ?? Enumerable.Empty<List<Point>>()).Select(p => string.Join(", ", p))),
-            Florence2TaskType.RegionToSegmentation => string.Join(", ", (Polygons ?? Enumerable.Empty<List<Point>>()).Select(p => string.Join(", ", p))),
+            Florence2TaskType.ReferringExpressionSegmentation => string.Join(", ", (Polygons ?? Enumerable.Empty<IReadOnlyCollection<Point>>()).Select(p => string.Join(", ", p))),
+            Florence2TaskType.RegionToSegmentation => string.Join(", ", (Polygons ?? Enumerable.Empty<IReadOnlyCollection<Point>>()).Select(p => string.Join(", ", p))),
             Florence2TaskType.OpenVocabularyDetection => string.Join(", ", Labels ?? Enumerable.Empty<string>()),
             Florence2TaskType.RegionToCategory => string.Join(", ", Labels ?? Enumerable.Empty<string>()),
             Florence2TaskType.RegionToDescription => Text ?? string.Empty,

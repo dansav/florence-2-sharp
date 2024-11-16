@@ -33,10 +33,10 @@ public static class Florence2Tasks
 
     private static readonly Dictionary<string, Florence2TaskType> TaskTypeLookup = TaskConfigurations.ToDictionary(x => x.Value.Token, x => x.Key);
 
-    public static Florence2Query CreateQuery(string customPrompt)
-    {
-        return new Florence2Query(Florence2TaskType.Caption, customPrompt);
-    }
+    // public static Florence2Query CreateQuery(string customPrompt)
+    // {
+    //     return new Florence2Query(Florence2TaskType.Caption, customPrompt);
+    // }
 
     /// <summary>
     /// Creates a query for the specified task type.

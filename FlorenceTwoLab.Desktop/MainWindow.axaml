@@ -3,78 +3,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:desktop="clr-namespace:FlorenceTwoLab.Desktop"
+        xmlns:views="clr-namespace:FlorenceTwoLab.Desktop.Views"
+        xmlns:viewModels="clr-namespace:FlorenceTwoLab.Desktop.ViewModels"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="FlorenceTwoLab.Desktop.MainWindow"
-        x:DataType="desktop:MainViewModel"
+        x:DataType="viewModels:MainViewModel"
         x:CompileBindings="True"
         Title="FlorenceTwoLab.Desktop">
-    <Window.Resources>
-        <desktop:ImageConverter x:Key="ImageConverter" />
-    </Window.Resources>
-    <Window.Styles>
-        <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Padding" Value="0 0 10 0" />
-        </Style>
-    </Window.Styles>
-    <Grid ColumnDefinitions="*,2*">
-        <DockPanel Grid.Column="0" Margin="10">
-            <TabControl DockPanel.Dock="Top" Padding="0" SelectedItem="{Binding SelectedTaskGroup}">
-                <TabItem Header="Basic" x:Name="Basic">
-                    <StackPanel Margin="0 10">
-                        <ComboBox ItemsSource="{Binding PredefinedBasicTasks}"
-                                  SelectedItem="{Binding SelectedBasicTask, Mode=TwoWay}"
-                                  HorizontalAlignment="Stretch" />
-                    </StackPanel>
-                </TabItem>
-                <TabItem Header="Region" x:Name="Region">
-                    <StackPanel>
-                        <ComboBox ItemsSource="{Binding PredefinedRegionTasks}"
-                                  SelectedItem="{Binding SelectedRegionTask, Mode=TwoWay}"
-                                  HorizontalAlignment="Stretch" />
-                        <Button Margin="0 10 0 0">Create region</Button>
-                    </StackPanel>
-                </TabItem>
-                <TabItem Header="Input" x:Name="Input">
-                    <StackPanel>
-                        <ComboBox ItemsSource="{Binding PredefinedSubpromptTasks}"
-                                  SelectedItem="{Binding SelectedSubpromptTask, Mode=TwoWay}"
-                                  HorizontalAlignment="Stretch" />
-                        <TextBlock Margin="0 10 0 0">Prompt</TextBlock>
-                        <TextBox Text="{Binding CustomPrompt}"
-                                 KeyDown="InputElement_OnKeyDown" />
-                    </StackPanel>
-                </TabItem>
-            </TabControl>
-
-            <Rectangle DockPanel.Dock="Top"
-                       Margin="0 10 0 15"
-                       HorizontalAlignment="Stretch"
-                       Height="2"
-                       Fill="{StaticResource SystemBaseLowColor}" />
-            <TextBlock DockPanel.Dock="Top">Output</TextBlock>
-            <TextBox IsReadOnly="True" Text="{Binding Output}" TextWrapping="Wrap" MinLines="10" />
-        </DockPanel>
-
-
-        <DockPanel Grid.Column="1">
-            <Grid DragDrop.AllowDrop="True" Margin="0 10 10 10">
-                <Border BorderBrush="Gray"
-                        BorderThickness="2"
-                        CornerRadius="10">
-                    <Border.Background>
-                        <SolidColorBrush Color="Gray" Opacity="0.1" />
-                    </Border.Background>
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        HorizontalAlignment="Center">
-                        Drop Image Here
-                    </TextBlock>
-                </Border>
-                <Image Margin="5"
-                       Source="{Binding Preview, Converter={StaticResource ImageConverter}}"
-                       IsVisible="{Binding IsPreviewVisible}" />
-            </Grid>
-        </DockPanel>
-    </Grid>
+ <views:MainView />
 </Window>

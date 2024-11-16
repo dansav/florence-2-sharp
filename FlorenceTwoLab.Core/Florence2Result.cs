@@ -28,7 +28,7 @@ public sealed class Florence2Result
             Florence2TaskType.ObjectDetection => string.Join(", ", Labels ?? Enumerable.Empty<string>()),
             Florence2TaskType.DenseRegionCaption => string.Join(", ", Labels ?? Enumerable.Empty<string>()),
             Florence2TaskType.RegionProposal => ZipLabelsAndBoundingBoxes(Labels, BoundingBoxes),
-            Florence2TaskType.CaptionToGrounding => Text ?? string.Empty,
+            Florence2TaskType.CaptionToGrounding => string.Join(", ", Labels ?? Enumerable.Empty<string>()),
             Florence2TaskType.ReferringExpressionSegmentation => string.Join(", ",
                 (Polygons ?? Enumerable.Empty<IReadOnlyCollection<Point>>()).Select(p => string.Join(", ", p))),
             Florence2TaskType.RegionToSegmentation => string.Join(", ",

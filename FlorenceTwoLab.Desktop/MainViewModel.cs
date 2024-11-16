@@ -9,24 +9,51 @@ using FlorenceTwoLab.Core;
 using FlorenceTwoLab.Core.Utils;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Image = SixLabors.ImageSharp.Image;
 using Point = SixLabors.ImageSharp.Point;
 
 namespace FlorenceTwoLab.Desktop;
 
 public partial class MainViewModel : ObservableObject
 {
-    private static readonly HashSet<string> _tasksWithCustomPrompt = new(["Custom"]);
+    [ObservableProperty] private IReadOnlyCollection<string> _predefinedBasicTasks = new[]
+    {
+        Florence2TaskType.Caption,
+        Florence2TaskType.DetailedCaption,
+        Florence2TaskType.MoreDetailedCaption,
+        Florence2TaskType.Ocr,
+        Florence2TaskType.OcrWithRegions,
+        Florence2TaskType.ObjectDetection,
+        Florence2TaskType.DenseRegionCaption,
+        Florence2TaskType.RegionProposal
+    }.Select(x => x.ToString()).ToArray();
 
-    [ObservableProperty]
-    private IEnumerable<string> _predefinedTasks = new[] { "Custom" }.Concat(Enum.GetNames(typeof(Florence2TaskType)));
+    [ObservableProperty] private IReadOnlyCollection<string> _predefinedRegionTasks = new[]
+    {
+        Florence2TaskType.RegionToSegmentation,
+        Florence2TaskType.RegionToCategory,
+        Florence2TaskType.RegionToDescription,
+        Florence2TaskType.RegionToOcr
+    }.Select(x => x.ToString()).ToArray();
 
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanEditCustomPrompt))]
-    private string _selectedTask;
+    [ObservableProperty] private IReadOnlyCollection<string> _predefinedSubpromptTasks = new[]
+    {
+        Florence2TaskType.CaptionToGrounding,
+        Florence2TaskType.ReferringExpressionSegmentation,
+        Florence2TaskType.OpenVocabularyDetection,
+    }.Select(x => x.ToString()).ToArray();
+
+    [ObservableProperty] private string _selectedBasicTask;
+
+    [ObservableProperty] private string _selectedRegionTask;
+
+    [ObservableProperty] private string _selectedSubpromptTask;
 
     [ObservableProperty] private string? _customPrompt;
 
@@ -36,17 +63,27 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private bool _isPreviewVisible;
 
+    [ObservableProperty] private object? _selectedTaskGroup;
+
     private Image? _loadedImage;
 
     public MainViewModel()
     {
-        SelectedTask = Florence2TaskType.Caption.ToString();
+        SelectedBasicTask = _predefinedBasicTasks.First();
+        SelectedRegionTask = _predefinedRegionTasks.First();
+        SelectedSubpromptTask = _predefinedSubpromptTasks.First();
     }
+    
+    
 
-    public bool CanEditCustomPrompt => _tasksWithCustomPrompt.Contains(SelectedTask);
+    partial void OnSelectedBasicTaskChanged(string value) => RunTask(value);
+    partial void OnSelectedRegionTaskChanged(string value) => RunTask(value);
+    partial void OnSelectedSubpromptTaskChanged(string value) => RunTask(value);
 
-    async partial void OnSelectedTaskChanged(string value)
+    private async void RunTask(string value)
     {
+        Debug.WriteLine($"Selected task: {value}");
+
         if (_loadedImage is null) return;
         try
         {
@@ -57,6 +94,45 @@ public partial class MainViewModel : ObservableObject
             Debug.WriteLine(e);
             throw;
         }
+    }
+
+    partial void OnSelectedTaskGroupChanged(object value)
+    {
+        // TODO: remove dependency on UI elements
+        if (value is TabItem tabItem)
+        {
+            switch (tabItem.Name)
+            {
+                case "Basic":
+                    if (SelectedBasicTask == _predefinedBasicTasks.First()) RunTask(SelectedBasicTask);
+                    SelectedBasicTask = _predefinedBasicTasks.First();
+                    break;
+                case "Region":
+                    if (SelectedRegionTask == _predefinedRegionTasks.First()) RunTask(SelectedRegionTask);
+                    SelectedRegionTask = _predefinedRegionTasks.First();
+                    break;
+                case "Input":
+                    if (SelectedSubpromptTask == _predefinedSubpromptTasks.First()) RunTask(SelectedSubpromptTask);
+                    SelectedSubpromptTask = _predefinedSubpromptTasks.First();
+                    break;
+            }
+        }
+    }
+    
+    private string GetCurrentTask()
+    {
+        if (_selectedTaskGroup is TabItem tab)
+        {
+            return tab.Name switch
+            {
+                "Basic" => SelectedBasicTask,
+                "Region" => SelectedRegionTask,
+                "Input" => SelectedSubpromptTask,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        return string.Empty;
     }
 
     public async Task LoadImageAsync(Stream stream)
@@ -98,12 +174,13 @@ public partial class MainViewModel : ObservableObject
         // var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
 
         Florence2Query query;
-        if (Enum.TryParse<Florence2TaskType>(SelectedTask, out var selectedTask))
+        if (Enum.TryParse<Florence2TaskType>(GetCurrentTask(), out var selectedTask))
         {
             query = Florence2Tasks.CreateQuery(selectedTask);
         }
         else
         {
+            Debug.WriteLine("Unknown task type. Falling back to caption task.");
             query = new Florence2Query(Florence2TaskType.Caption, CustomPrompt ?? "");
         }
 
@@ -135,15 +212,15 @@ public partial class MainViewModel : ObservableObject
                     break;
                 case Florence2TaskType.OcrWithRegions:
                     Output = string.Join(", ", result.Labels!);
-                    Preview = await DecorateAsync(_loadedImage, result.Labels!, result.BoundingBoxes!, result.Polygons!);
+                    Preview = await DecorateAsync(_loadedImage, result.Labels!, result.BoundingBoxes!,
+                        result.Polygons!);
                     break;
                 case Florence2TaskType.ObjectDetection:
+                case Florence2TaskType.DenseRegionCaption:
+                case Florence2TaskType.RegionProposal:
                     Output = string.Join(", ", result.Labels!);
                     Preview = await DecorateAsync(_loadedImage, result.Labels!, result.BoundingBoxes!);
                     break;
-                case Florence2TaskType.DenseRegionCaption:
-                    break;
-                case Florence2TaskType.RegionProposal:
                     break;
                 case Florence2TaskType.RegionToDescription:
                     break;
@@ -173,7 +250,8 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes, IReadOnlyCollection<IReadOnlyCollection<Point>>? polygons = null)
+    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes,
+        IReadOnlyCollection<IReadOnlyCollection<Point>>? polygons = null)
     {
         return await Task.Run(() =>
         {
@@ -192,7 +270,7 @@ public partial class MainViewModel : ObservableObject
                         new PointF(rect.Right, rect.Top),
                         new PointF(rect.Right, rect.Bottom),
                         new PointF(rect.Left, rect.Bottom));
-                    
+
                     ctx.Fill(chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
                     ctx.DrawText(label, SystemFonts.CreateFont("Arial", 12), foreground,
                         new PointF(rect.Left + 5, rect.Bottom - 13));

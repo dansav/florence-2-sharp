@@ -25,7 +25,8 @@ public partial class DecoderPostProcessor
 
             // Detection tasks
             Florence2TaskType.ObjectDetection or
-                Florence2TaskType.DenseRegionCaption => await ProcessDetectionResultAsync(taskType, modelOutput,
+                Florence2TaskType.DenseRegionCaption or
+                Florence2TaskType.RegionProposal => await ProcessDetectionResultAsync(taskType, modelOutput,
                     imageWasPadded, imageWidth, imageHeight),
 
             // Advanced detection tasks

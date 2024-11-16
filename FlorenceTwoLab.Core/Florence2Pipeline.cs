@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using System.Diagnostics;
+using System.Reflection.Emit;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 
@@ -52,7 +53,7 @@ public partial class Florence2Pipeline
 
         // 2. Text
         var tokenized = _tokenizer.Tokenize(prompt);
-        Console.WriteLine($"Input tokens: '{string.Join("', '", tokenized)}'");
+        Debug.WriteLine($"Input tokens: '{string.Join("', '", tokenized)}'");
 
         var inputIds = new DenseTensor<long>(_tokenizer.ConvertTokensToIds(tokenized).Select(i => (long)i).ToArray(),
             [1, tokenized.Count]);

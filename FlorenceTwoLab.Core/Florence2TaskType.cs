@@ -6,18 +6,18 @@
 public enum Florence2TaskType
 {
     // Basic captioning
-    Caption,
-    DetailedCaption,
-    MoreDetailedCaption,
+    Caption, // supported by post-processor
+    DetailedCaption, // supported by post-processor
+    MoreDetailedCaption, // supported by post-processor
 
     // OCR
-    Ocr,
-    OcrWithRegions,
+    Ocr, // supported by post-processor
+    OcrWithRegions, // supported by post-processor
 
     // Object detection
-    ObjectDetection,
-    DenseRegionCaption,
-    RegionProposal,
+    ObjectDetection, // supported by post-processor
+    DenseRegionCaption, // supported by post-processor
+    RegionProposal, // supported by post-processor
 
     // Region analysis
     RegionToDescription,

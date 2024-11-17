@@ -4,16 +4,21 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+
 using CommunityToolkit.Mvvm.ComponentModel;
+
 using FlorenceTwoLab.Core;
 using FlorenceTwoLab.Core.Utils;
+
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+
 using Image = SixLabors.ImageSharp.Image;
 using Point = SixLabors.ImageSharp.Point;
 using Size = SixLabors.ImageSharp.Size;
@@ -33,7 +38,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
     [ObservableProperty] private ITaskGroupViewModel? _selectedTaskGroup;
 
     private Florence2Pipeline? _pipeline;
-    
+
     private Image? _loadedImage;
 
     public MainViewModel()
@@ -45,13 +50,13 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             new GroundingTaskGroupViewModel().Initialize(RunTask)
         ];
     }
-    
+
     public IEnumerable<ITaskGroupViewModel> TaskGroups => _taskGroups;
 
     public Rectangle Selection => new Rectangle(100, 100, 100, 100); // TODO: Implement
-    
+
     public Size ImageSize => _loadedImage?.Size ?? new Size(0, 0);
-    
+
     public async Task InitializeAsync()
     {
         string? modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS");
@@ -69,7 +74,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
         };
 
         _pipeline = await Florence2Pipeline.CreateAsync(config);
-        
+
         // string? testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA");
         // if (string.IsNullOrEmpty(testDataDir))
         // {
@@ -81,7 +86,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
         // var testFile = Directory.GetFiles(testDataDir, "*.jpg")[0];
         // var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
     }
-    
+
     private async void RunTask(Florence2TaskType value)
     {
         Debug.WriteLine($"Selected task: {value}");
@@ -119,7 +124,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             Debug.WriteLine("Pipeline not initialized");
             return;
         }
-        
+
         if (_loadedImage is null)
         {
             Debug.WriteLine("No image loaded");
@@ -138,50 +143,41 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             var result = await _pipeline.ProcessAsync(_loadedImage, query);
             Debug.WriteLine(result);
 
-            switch (result.TaskType)
+            if (result is { Polygons: not null, Labels: not null })
+            {
+                // text, bounding boxes, and polygons (only quad boxes are supported)
+                Debug.WriteLine("Polygons and labels detected");
+                Output = string.Join(", ", result.Labels);
+                Preview = await DecorateAsync(_loadedImage, result.Labels, result.BoundingBoxes, result.Polygons);
+                return;
+            }
+
+            if (result is { BoundingBoxes: not null, Labels: not null })
+            {
+                // text and bounding boxes
+                Output = string.Join(", ", result.Labels!);
+                Preview = await DecorateAsync(_loadedImage, result.Labels, result.BoundingBoxes);
+                return;
+            }
+
+            if (result is { Polygons: not null })
+            {
+                // polygons (unknown if text)
+                Output = $"{result.Polygons?.Count} polygons";
+                Preview = await DecorateAsync(_loadedImage, polygons: result.Polygons);
+                return;
+            }
+
+            if (result is { Text: not null })
             {
                 // just text output
-                case Florence2TaskType.Caption:
-                case Florence2TaskType.DetailedCaption:
-                case Florence2TaskType.MoreDetailedCaption:
-                case Florence2TaskType.Ocr:
-                    Output = result.ToString();
-                    Preview = _loadedImage;
-                    break;
-                
-                // text and bounding boxes
-                case Florence2TaskType.ObjectDetection:
-                case Florence2TaskType.DenseRegionCaption:
-                case Florence2TaskType.RegionProposal:
-                case Florence2TaskType.CaptionToGrounding:
-                    Output = string.Join(", ", result.Labels!);
-                    Preview = await DecorateAsync(_loadedImage, result.Labels!, result.BoundingBoxes!);
-                    break;
-                
-                // text, bounding boxes, and polygons (only quad boxes are supported)
-                case Florence2TaskType.OcrWithRegions:
-                case Florence2TaskType.OpenVocabularyDetection:
-                    Output = string.Join(", ", result.Labels!);
-                    Preview = await DecorateAsync(_loadedImage, result.Labels!, result.BoundingBoxes!,
-                        result.Polygons!);
-                    break;
-                
-                // text and polygons
-                case Florence2TaskType.ReferringExpressionSegmentation:
-                    break;
-                
-                // not determined yet...
-                case Florence2TaskType.RegionToDescription:
-                    break;
-                case Florence2TaskType.RegionToSegmentation:
-                    break;
-                case Florence2TaskType.RegionToCategory:
-                    break;
-                case Florence2TaskType.RegionToOcr:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                Output = result.Text;
+                Preview = _loadedImage;
+                return;
             }
+
+            Debug.WriteLine("Got result that could not be handled");
+            throw new InvalidOperationException("Got result that could not be handled");
         }
         catch (Exception exception)
         {
@@ -193,7 +189,10 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
         }
     }
 
-    private async Task<Image> DecorateAsync(Image image, List<string> labels, List<Rectangle> boundingBoxes,
+    private async Task<Image> DecorateAsync(
+        Image image,
+        List<string>? labels = null,
+        List<Rectangle>? boundingBoxes = null,
         IReadOnlyCollection<IReadOnlyCollection<Point>>? polygons = null)
     {
         return await Task.Run(() =>
@@ -204,19 +203,27 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
                 var chrome = new SolidBrush(Color.Red.WithAlpha(0.3f));
                 var foreground = Color.White;
 
-                for (int i = 0; i < boundingBoxes.Count; i++)
+                if (boundingBoxes != null)
                 {
-                    var rect = boundingBoxes[i];
-                    var label = labels[i];
-                    ctx.DrawPolygon(chrome, 2f,
-                        new PointF(rect.Left, rect.Top),
-                        new PointF(rect.Right, rect.Top),
-                        new PointF(rect.Right, rect.Bottom),
-                        new PointF(rect.Left, rect.Bottom));
+                    for (int i = 0; i < boundingBoxes.Count; i++)
+                    {
+                        var rect = boundingBoxes[i];
+                        ctx.DrawPolygon(chrome, 2f,
+                            new PointF(rect.Left, rect.Top),
+                            new PointF(rect.Right, rect.Top),
+                            new PointF(rect.Right, rect.Bottom),
+                            new PointF(rect.Left, rect.Bottom));
 
-                    ctx.Fill(chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
-                    ctx.DrawText(label, SystemFonts.CreateFont("Arial", 12), foreground,
-                        new PointF(rect.Left + 5, rect.Bottom - 13));
+                        ctx.Fill(chrome, new RectangleF(rect.Left, rect.Bottom - 15, rect.Width, 15));
+
+                        // only draw label if we have a bounding box
+                        var label = labels?[i];
+                        if (label != null)
+                        {
+                            ctx.DrawText(label, SystemFonts.CreateFont("Arial", 12), foreground,
+                                new PointF(rect.Left + 5, rect.Bottom - 13));
+                        }
+                    }
                 }
 
                 if (polygons != null)
@@ -231,6 +238,4 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             return image2;
         });
     }
-
-  
 }

@@ -5,38 +5,67 @@ namespace FlorenceTwoLab.Core;
 /// <summary>
 /// Provides methods to create properly formatted prompts for all Florence-2 tasks
 /// </summary>
-public static class Florence2Tasks
+public class Florence2Tasks
 {
-    private static readonly Dictionary<Florence2TaskType, (string Token, string Prompt, bool RequiresRegion, bool RequiresSubPrompt)> TaskConfigurations = new()
+    public static readonly IReadOnlyDictionary<Florence2TaskType, Florence2Tasks> TaskConfigurations = new Dictionary<Florence2TaskType, Florence2Tasks>
     {
-        // Basic captioning
-        [Florence2TaskType.Caption] = ("<CAPTION>", "What does the image describe?", false, false),
-        [Florence2TaskType.DetailedCaption] = ("<DETAILED_CAPTION>", "Describe in detail what is shown in the image.", false, false),
-        [Florence2TaskType.MoreDetailedCaption] = ("<MORE_DETAILED_CAPTION>", "Describe with a paragraph what is shown in the image.", false, false),
-        [Florence2TaskType.Ocr] = ("<OCR>", "What is the text in the image?", false, false),
-        [Florence2TaskType.OcrWithRegions] = ("<OCR_WITH_REGION>", "What is the text in the image, with regions?", false, false),
-        [Florence2TaskType.ObjectDetection] = ("<OD>", "Locate the objects with category name in the image.", false, false),
-        [Florence2TaskType.DenseRegionCaption] = ("<DENSE_REGION_CAPTION>", "Locate the objects in the image, with their descriptions.", false, false),
-        [Florence2TaskType.RegionProposal] = ("<REGION_PROPOSAL>", "Locate the region proposals in the image.", false, false),
+        // Basic query with text output
+        [Florence2TaskType.Caption] = new(Florence2TaskType.Caption, "<CAPTION>", "What does the image describe?", false, false, true, false, false, false),
+        [Florence2TaskType.DetailedCaption] = new(Florence2TaskType.DetailedCaption, "<DETAILED_CAPTION>", "Describe in detail what is shown in the image.", false, false, true, false, false, false),
+        [Florence2TaskType.MoreDetailedCaption] = new(Florence2TaskType.MoreDetailedCaption, "<MORE_DETAILED_CAPTION>", "Describe with a paragraph what is shown in the image.", false, false, true, false, false, false),
+        [Florence2TaskType.Ocr] = new(Florence2TaskType.Ocr, "<OCR>", "What is the text in the image?", false, false, true, false, false, false),
+
+        // Basic query with regions/labels/polygons output 
+        [Florence2TaskType.OcrWithRegions] = new(Florence2TaskType.OcrWithRegions, "<OCR_WITH_REGION>", "What is the text in the image, with regions?", false, false, false, true, true, true),
+
+        // Basic query with regions/labels output 
+        [Florence2TaskType.ObjectDetection] = new(Florence2TaskType.ObjectDetection, "<OD>", "Locate the objects with category name in the image.", false, false, false, true, true, false),
+        [Florence2TaskType.DenseRegionCaption] = new(Florence2TaskType.DenseRegionCaption, "<DENSE_REGION_CAPTION>", "Locate the objects in the image, with their descriptions.", false, false, false, true, true, false),
+        [Florence2TaskType.RegionProposal] = new(Florence2TaskType.RegionProposal, "<REGION_PROPOSAL>", "Locate the region proposals in the image.", false, false, false, true, true, false),
 
         // Grounding and detection
-        [Florence2TaskType.CaptionToGrounding] = ("<CAPTION_TO_PHRASE_GROUNDING>", "Locate the phrases in the caption: {0}", false, true),
-        [Florence2TaskType.ReferringExpressionSegmentation] = ("<REFERRING_EXPRESSION_SEGMENTATION>", "Locate {0} in the image with mask", false, true),
-        [Florence2TaskType.OpenVocabularyDetection] = ("<OPEN_VOCABULARY_DETECTION>", "Locate {0} in the image.", false, true),
+        [Florence2TaskType.CaptionToGrounding] = new(Florence2TaskType.CaptionToGrounding, "<CAPTION_TO_PHRASE_GROUNDING>", "Locate the phrases in the caption: {0}", false, true, false, true, true, false),
+        [Florence2TaskType.ReferringExpressionSegmentation] = new(Florence2TaskType.ReferringExpressionSegmentation, "<REFERRING_EXPRESSION_SEGMENTATION>", "Locate {0} in the image with mask", false, true, false, false, false, true),
+        [Florence2TaskType.OpenVocabularyDetection] = new(Florence2TaskType.OpenVocabularyDetection, "<OPEN_VOCABULARY_DETECTION>", "Locate {0} in the image.", false, true, false, true, false, true), // not sure yet
 
         // Region analysis
-        [Florence2TaskType.RegionToSegmentation] = ("<REGION_TO_SEGMENTATION>", "What is the polygon mask of region {0}", true, false),
-        [Florence2TaskType.RegionToCategory] = ("<REGION_TO_CATEGORY>", "What is the region {0}?", true, false),
-        [Florence2TaskType.RegionToDescription] = ("<REGION_TO_DESCRIPTION>", "What does the region {0} describe?", true, false),
-        [Florence2TaskType.RegionToOcr] = ("<REGION_TO_OCR>", "What text is in the region {0}?", true, false)
+        [Florence2TaskType.RegionToSegmentation] = new(Florence2TaskType.RegionToSegmentation, "<REGION_TO_SEGMENTATION>", "What is the polygon mask of region {0}", true, false, false, false, false, true), // not sure yet
+        [Florence2TaskType.RegionToCategory] = new(Florence2TaskType.RegionToCategory, "<REGION_TO_CATEGORY>", "What is the region {0}?", true, false, true, false, false, false), // not sure yet
+        [Florence2TaskType.RegionToDescription] = new(Florence2TaskType.RegionToDescription, "<REGION_TO_DESCRIPTION>", "What does the region {0} describe?", true, false, true, false, false, false), // not sure yet
+        [Florence2TaskType.RegionToOcr] = new(Florence2TaskType.RegionToOcr, "<REGION_TO_OCR>", "What text is in the region {0}?", true, false, true, false, false, false) // not sure yet
     };
 
-    private static readonly Dictionary<string, Florence2TaskType> TaskTypeLookup = TaskConfigurations.ToDictionary(x => x.Value.Token, x => x.Key);
+    private Florence2Tasks(
+        Florence2TaskType taskType,
+        string promptAlias,
+        string prompt,
+        bool requiresRegionInput,
+        bool requiresSubPrompt,
+        bool returnsText,
+        bool returnsLabels,
+        bool returnsBoundingBoxes,
+        bool returnsPolygons)
+    {
+        TaskType = taskType;
+        PromptAlias = promptAlias;
+        Prompt = prompt;
+        RequiresRegionInput = requiresRegionInput;
+        RequiresSubPrompt = requiresSubPrompt;
+        ReturnsText = returnsText;
+        ReturnsLabels = returnsLabels;
+        ReturnsBoundingBoxes = returnsBoundingBoxes;
+        ReturnsPolygons = returnsPolygons;
+    }
 
-    // public static Florence2Query CreateQuery(string customPrompt)
-    // {
-    //     return new Florence2Query(Florence2TaskType.Caption, customPrompt);
-    // }
+    public Florence2TaskType TaskType { get; }
+    public string PromptAlias { get; }
+    public string Prompt { get; }
+    public bool RequiresRegionInput { get; }
+    public bool RequiresSubPrompt { get; }
+    public bool ReturnsText { get; }
+    public bool ReturnsLabels { get; }
+    public bool ReturnsBoundingBoxes { get; }
+    public bool ReturnsPolygons { get; }
 
     /// <summary>
     /// Creates a query for the specified task type.
@@ -63,7 +92,7 @@ public static class Florence2Tasks
         if (!TaskConfigurations.TryGetValue(taskType, out var config))
             throw new ArgumentException($"Unsupported task type: {taskType}");
 
-        if (config.RequiresRegion)
+        if (config.RequiresRegionInput)
             throw new ArgumentException($"Task {taskType} requires region parameter");
 
         if (config.RequiresSubPrompt)
@@ -99,7 +128,7 @@ public static class Florence2Tasks
         if (!TaskConfigurations.TryGetValue(taskType, out var config))
             throw new ArgumentException($"Unsupported task type: {taskType}");
 
-        if (!config.RequiresRegion)
+        if (!config.RequiresRegionInput)
             throw new ArgumentException($"Task {taskType} does not handle region parameter");
 
         var regionString = region.CreateNormalizedRegionString(imageSize);
@@ -133,27 +162,5 @@ public static class Florence2Tasks
             throw new ArgumentException($"Task {taskType} does not handle input parameter");
 
         return new Florence2Query(taskType, string.Format(config.Prompt, subPrompt));
-    }
-
-    // Cascaded tasks
-    public static async Task<Florence2Query> CreateQueryWithGroundingAsync(Florence2TaskType taskType, Florence2Pipeline pipeline, Image image)
-    {
-        switch (taskType)
-        {
-            case Florence2TaskType.Caption:
-            case Florence2TaskType.DetailedCaption:
-            case Florence2TaskType.MoreDetailedCaption:
-                break;
-            default:
-                throw new ArgumentException($"Unsupported task type: {taskType}");
-        }
-
-        // First get a caption
-        var initialQuery = CreateQuery(taskType);
-        var captionResult = await pipeline.ProcessAsync(image, initialQuery);
-        var caption = captionResult.ToString();
-
-        // Then create grounding prompt with that caption
-        return CreateQuery(Florence2TaskType.CaptionToGrounding, caption);
     }
 }

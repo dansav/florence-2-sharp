@@ -163,12 +163,12 @@ public partial class DecoderPostProcessor
         {
             var label = match.Groups[1].Value;
             var polygon = new List<Point>();
-            var cooridnates = match.Groups[3];
+            var coordinates = match.Groups[3];
             
-            for (int i = 0; i < cooridnates.Captures.Count; i += 2)
+            for (int i = 0; i < coordinates.Captures.Count; i += 2)
             {
-                var x = (int)((0.5f + int.Parse(cooridnates.Captures[i].Value)) * w);
-                var y = (int)((0.5f + int.Parse(cooridnates.Captures[i + 1].Value)) * h);
+                var x = (int)((0.5f + int.Parse(coordinates.Captures[i].Value)) * w);
+                var y = (int)((0.5f + int.Parse(coordinates.Captures[i + 1].Value)) * h);
                 polygon.Add(new Point(x, y));
             }
             

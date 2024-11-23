@@ -23,4 +23,8 @@
     <ItemGroup>
       <ProjectReference Include="..\FlorenceTwoLab.Core\FlorenceTwoLab.Core.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Controls\" />
+    </ItemGroup>
 </Project>

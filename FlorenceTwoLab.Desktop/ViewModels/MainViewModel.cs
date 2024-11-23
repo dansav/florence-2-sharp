@@ -50,6 +50,8 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             new GroundingTaskGroupViewModel().Initialize(RunTask)
         ];
     }
+    
+    public ImageRegionSelectorViewModel ImageRegionSelector { get; } = new();
 
     public IEnumerable<ITaskGroupViewModel> TaskGroups => _taskGroups;
 

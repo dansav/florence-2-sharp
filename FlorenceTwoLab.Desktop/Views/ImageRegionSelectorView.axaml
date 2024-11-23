@@ -1,0 +1,62 @@
+<!-- filepath: /Users/daniel/Code/florence-2-sharp/Controls/ImageRegionSelector.axaml -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:FlorenceTwoLab.Desktop.ViewModels"
+             xmlns:models="clr-namespace:FlorenceTwoLab.Desktop.Models"
+             x:Class="FlorenceTwoLab.Desktop.Views.ImageRegionSelectorView"
+             x:DataType="vm:ImageRegionSelectorViewModel"
+             x:Name="Root">
+    <Grid>
+        <!-- Completed regions -->
+        <ItemsControl ItemsSource="{Binding Regions}"
+                      Background="Transparent"
+                      Width="{Binding ElementName=Root, Path=Bounds.Width }"
+                      Height="{Binding ElementName=Root, Path=Bounds.Height }">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Rectangle Stroke="Red"
+                               StrokeThickness="2"
+                               Fill="Red"
+                               Opacity="0.3"
+                               Width="{Binding Width}"
+                               Height="{Binding Height}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.Styles>
+                <Style Selector="ContentPresenter" x:DataType="models:RegionOfInterest">
+                    <Setter Property="Canvas.Left" Value="{Binding Left}"/>
+                    <Setter Property="Canvas.Top" Value="{Binding Top}"/>
+                </Style>
+            </ItemsControl.Styles>
+        </ItemsControl>
+        
+        <Canvas Name="DrawingCanvas"
+                Background="Transparent"
+                PointerPressed="OnPointerPressed"
+                PointerMoved="OnPointerMoved"
+                PointerReleased="OnPointerReleased">
+            <!-- Current region being drawn -->
+            <Rectangle IsVisible="{Binding IsDrawing}"
+                       Stroke="Red"
+                       StrokeThickness="2"
+                       Canvas.Left="{Binding DrawingLeft}"
+                       Canvas.Top="{Binding DrawingTop}"
+                       Width="{Binding DrawingWidth}"
+                       Height="{Binding DrawingHeight}">
+                <Rectangle.Styles>
+                    <Style Selector="Rectangle">
+                        <Setter Property="Canvas.Left" Value="{Binding DrawingLeft}" />
+                        <Setter Property="Canvas.Top" Value="{Binding DrawingTop}" />
+                        <Setter Property="Width" Value="{Binding DrawingWidth}" />
+                        <Setter Property="Height" Value="{Binding DrawingHeight}" />
+                    </Style>
+                </Rectangle.Styles>
+            </Rectangle>
+        </Canvas>
+    </Grid>
+</UserControl>

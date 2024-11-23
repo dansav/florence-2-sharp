@@ -64,9 +64,14 @@
                         Drop Image Here
                     </TextBlock>
                 </Border>
-                <Image Margin="5"
+                <Image x:Name="PreviewImage"
+                       Margin="5"
                        Source="{Binding Preview, Converter={StaticResource ImageConverter}}"
                        IsVisible="{Binding IsPreviewVisible}" />
+
+                <views:ImageRegionSelectorView
+                    Image="{Binding #PreviewImage}"
+                    DataContext="{Binding ImageRegionSelector}" />
             </Grid>
         </DockPanel>
     </Grid>

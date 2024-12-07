@@ -1,9 +1,12 @@
-﻿using SixLabors.ImageSharp;
+﻿using System;
+
+using FlorenceTwoLab.Desktop.Models;
+
+using SixLabors.ImageSharp;
 
 namespace FlorenceTwoLab.Desktop.ViewModels;
 
 public interface IImageSelectionSource
 {
-    Rectangle Selection { get; }
-    Size ImageSize { get; }
+    event Action<RegionOfInterest, Size> ImageSelectionChanged;
 }

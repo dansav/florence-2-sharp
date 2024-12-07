@@ -11,5 +11,5 @@ public interface ITaskGroupViewModel
     
     void SelectFirstTask();
 
-    Florence2Query Query();
+    Florence2Query? Query();
 }

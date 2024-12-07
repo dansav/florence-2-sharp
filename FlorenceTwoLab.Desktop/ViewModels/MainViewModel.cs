@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 using FlorenceTwoLab.Core;
 using FlorenceTwoLab.Core.Utils;
+using FlorenceTwoLab.Desktop.Models;
 
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
@@ -49,13 +50,24 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             new RegionTaskGroupViewModel(this).Initialize(RunTask),
             new GroundingTaskGroupViewModel().Initialize(RunTask)
         ];
+
+        ImageRegionSelector = new();
+        ImageRegionSelector.Regions.CollectionChanged += (s, e) =>
+        {
+            if (e.NewItems is not null && e.NewItems.Count > 0)
+            {
+                var region = e.NewItems[0] as RegionOfInterest;
+                if (region is null) return;
+                ImageSelectionChanged?.Invoke(region, ImageSize);
+            }
+        };
     }
     
-    public ImageRegionSelectorViewModel ImageRegionSelector { get; } = new();
+    public event Action<RegionOfInterest, Size> ImageSelectionChanged;
+
+    public ImageRegionSelectorViewModel ImageRegionSelector { get; }
 
     public IEnumerable<ITaskGroupViewModel> TaskGroups => _taskGroups;
-
-    public Rectangle Selection => new Rectangle(100, 100, 100, 100); // TODO: Implement
 
     public Size ImageSize => _loadedImage?.Size ?? new Size(0, 0);
 

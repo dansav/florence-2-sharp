@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{CC6E71
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlorenceTwoLab.Core.Tests", "FlorenceTwoLab.Core.Tests\FlorenceTwoLab.Core.Tests.csproj", "{F26A607E-05D4-441A-9173-34F7C2F4A6B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{92DCD4BC-0A77-4A4D-9D3E-288E0890C16C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F26A607E-05D4-441A-9173-34F7C2F4A6B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F26A607E-05D4-441A-9173-34F7C2F4A6B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F26A607E-05D4-441A-9173-34F7C2F4A6B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F26A607E-05D4-441A-9173-34F7C2F4A6B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

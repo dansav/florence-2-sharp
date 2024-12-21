@@ -47,8 +47,13 @@ public partial class BartTokenizer
         _bpeRanks = bpeRanks;
         _cache = new Dictionary<string, string>();
         _specialTokens = new HashSet<string> { PadToken, BosToken, EosToken, UnkToken, MaskToken };
-
-        AddedTokens = addedTokens;
+        if (addedTokens is not null)
+        {
+            foreach (var token in addedTokens)
+            {
+                _specialTokens.Add(token.Content);
+            }
+        }
 
         // Initialize byte encoder/decoder
         (_byteEncoder, _byteDecoder) = InitializeByteMappings();
@@ -59,8 +64,11 @@ public partial class BartTokenizer
 
     public int VocabSize => _encoder.Count;
 
-    public IReadOnlyCollection<AddedToken>? AddedTokens { get; private set; }
-
+    public static async Task<BartTokenizer> FromPretrainedAsync()
+    {
+        
+    }
+    
     public static async Task<BartTokenizer> FromPretrainedAsync(string metaDataDirectory)
     {
         var vocabPath = Path.Combine(metaDataDirectory, BaseVocabFileName);

@@ -348,13 +348,17 @@ if __name__ == "__main__":
 
     # Test with different prompts from documentation
     prompts = [
-        "<CAPTION>",  # Basic caption
-        "<DETAILED_CAPTION>",  # Detailed caption
-        "<MORE_DETAILED_CAPTION>",  # Very detailed caption
-        "<OD>",  # Object detection
-        "<OCR>",  # OCR
-        "What can you see in this image?",  # Generic question
-        "What does the image describe?",  # Another generic question
+        # "<CAPTION>",  # Basic caption
+        # "<DETAILED_CAPTION>",  # Detailed caption
+        # "<MORE_DETAILED_CAPTION>",  # Very detailed caption
+        # "<OD>",  # Object detection
+        # "<OCR>",  # OCR
+        # "What can you see in this image?",  # Generic question
+        # "What does the image describe?",  # Another generic question
+
+        "Some example with region <loc_999><loc_999>",
+
+        #task_prompt = '<REGION_TO_CATEGORY>' results = run_example(task_prompt, text_input="<loc_52><loc_332><loc_932><loc_774>")
     ]
     
     for prompt in prompts:

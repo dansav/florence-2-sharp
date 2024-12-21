@@ -1,17 +1,10 @@
-﻿using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace FlorenceTwoLab.Core;
+using FlorenceTwoLab.Core.Utils;
 
-public record class AddedToken(
-    string Content,
-    bool Lstrip = false,
-    bool Rstrip = false,
-    bool SingleWord = false,
-    bool Normalized = true,
-    bool Special = false);
+namespace FlorenceTwoLab.Core;
 
 public partial class BartTokenizer
 {
@@ -27,7 +20,7 @@ public partial class BartTokenizer
 
     private readonly Dictionary<string, int> _encoder;
     private readonly Dictionary<int, string> _decoder;
-    private readonly HashSet<string> _specialTokens;
+    private readonly Trie _specialTokens;
     private readonly Dictionary<string, string> _cache;
     private readonly Dictionary<(string, string), int> _bpeRanks;
     private readonly Dictionary<int, byte> _byteDecoder;
@@ -39,20 +32,17 @@ public partial class BartTokenizer
         Dictionary<string, int> encoder,
         Dictionary<int, string> decoder,
         Dictionary<(string, string), int> bpeRanks,
-        IReadOnlyCollection<AddedToken>? addedTokens = null)
+        IReadOnlyCollection<string>? addedTokens = null)
     {
         // Initialize collections
         _encoder = encoder;
         _decoder = decoder;
         _bpeRanks = bpeRanks;
         _cache = new Dictionary<string, string>();
-        _specialTokens = new HashSet<string> { PadToken, BosToken, EosToken, UnkToken, MaskToken };
-        if (addedTokens is not null)
+        _specialTokens = new Trie();
+        foreach (var specialToken in Enumerable.Concat([PadToken, BosToken, EosToken, UnkToken, MaskToken], addedTokens ?? []))
         {
-            foreach (var token in addedTokens)
-            {
-                _specialTokens.Add(token.Content);
-            }
+            _specialTokens.Add(specialToken);
         }
 
         // Initialize byte encoder/decoder
@@ -64,44 +54,49 @@ public partial class BartTokenizer
 
     public int VocabSize => _encoder.Count;
 
-    public static async Task<BartTokenizer> FromPretrainedAsync()
+    public static async Task<BartTokenizer> FromPretrainedAsync(Stream mergesStream, Stream vocabStream, Stream? addedTokensStream = null)
     {
-        
+        // Load vocabulary
+        var (encoder, decoder) = await LoadVocabularyAsync(vocabStream);
+
+        // Load merges
+        var bpeRanks = await LoadMergesAsync(mergesStream);
+
+        // Load added tokens if provided
+        IReadOnlyCollection<string>? addedTokens = null;
+        if (addedTokensStream is not null)
+        {
+            addedTokens = await LoadAddedTokensAsync(addedTokensStream, encoder, decoder);
+        }
+
+        return new BartTokenizer(encoder, decoder, bpeRanks, addedTokens);
     }
-    
+
     public static async Task<BartTokenizer> FromPretrainedAsync(string metaDataDirectory)
     {
         var vocabPath = Path.Combine(metaDataDirectory, BaseVocabFileName);
         var addedTokensPath = Path.Combine(metaDataDirectory, AdditionalVocabFileName);
         var mergesPath = Path.Combine(metaDataDirectory, MergesFileName);
 
-        // Load vocabulary
-        var (encoder, decoder) = await LoadVocabularyAsync(vocabPath);
+        if (!File.Exists(vocabPath)) throw new ArgumentException("Vocabulary file not found", nameof(vocabPath));
+        if (!File.Exists(mergesPath)) throw new ArgumentException("Merges file not found", nameof(mergesPath));
 
-        // Load merges
-        var bpeRanks = await LoadMergesAsync(mergesPath);
+        await using var vocabStream = File.OpenRead(vocabPath);
+        await using var mergesStream = File.OpenRead(mergesPath);
+        await using var addedTokensStream = File.Exists(addedTokensPath) ? File.OpenRead(addedTokensPath) : null;
 
-        // Load added tokens if provided
-        IReadOnlyCollection<AddedToken>? addedTokens = null;
-        if (!string.IsNullOrEmpty(addedTokensPath))
-        {
-            addedTokens = await LoadAddedTokensAsync(addedTokensPath, encoder, decoder);
-        }
-
-        return new BartTokenizer(encoder, decoder, bpeRanks, addedTokens);
+        return await FromPretrainedAsync(mergesStream, vocabStream, addedTokensStream);
     }
 
-    private static async Task<(Dictionary<string, int> encoder, Dictionary<int, string> decoder)> LoadVocabularyAsync(
-        string vocabPath)
+    private static async Task<(Dictionary<string, int> encoder, Dictionary<int, string> decoder)> LoadVocabularyAsync(Stream vocabStream)
     {
-        var json = await File.ReadAllTextAsync(vocabPath);
         return await Task.Run(() =>
         {
             var encoder = new Dictionary<string, int>();
             var decoder = new Dictionary<int, string>();
 
-            var vocab = JsonSerializer.Deserialize<Dictionary<string, int>>(json);
-            if (vocab is null) throw new ArgumentException("Vocabulary file is empty or invalid", nameof(vocabPath));
+            var vocab = JsonSerializer.Deserialize<Dictionary<string, int>>(vocabStream);
+            if (vocab is null) throw new ArgumentException("Vocabulary file is empty or invalid", nameof(vocabStream));
 
             foreach (var kvp in vocab)
             {
@@ -113,17 +108,23 @@ public partial class BartTokenizer
         });
     }
 
-    private static async Task<Dictionary<(string, string), int>> LoadMergesAsync(string path)
+    private static async Task<Dictionary<(string, string), int>> LoadMergesAsync(Stream mergesStream)
     {
-        var merges = (await File.ReadAllLinesAsync(path)).Skip(1); // Skip version header
-
-        return await Task.Run(() =>
+        return await Task.Run(async () =>
         {
+            using var reader = new StreamReader(mergesStream);
             var bpeRanks = new Dictionary<(string, string), int>();
 
             int i = 0;
-            foreach (var merge in merges)
+            bool skip = true;
+            while (await reader.ReadLineAsync(CancellationToken.None).ConfigureAwait(false) is { } merge)
             {
+                if (skip) // Skip header line
+                {
+                    skip = false;
+                    continue;
+                }
+
                 var parts = merge.Split();
                 if (parts.Length == 2)
                 {
@@ -136,24 +137,26 @@ public partial class BartTokenizer
         });
     }
 
-    private static async Task<IReadOnlyCollection<AddedToken>> LoadAddedTokensAsync(
-        string path,
+    private static async Task<IReadOnlyCollection<string>> LoadAddedTokensAsync(
+        Stream addedTokensStream,
         Dictionary<string, int> encoder,
         Dictionary<int, string> decoder)
     {
-        var json = await File.ReadAllTextAsync(path);
-        var addedTokens = JsonSerializer.Deserialize<Dictionary<string, int>>(json);
-        if (addedTokens is null) throw new ArgumentException("Added tokens file is empty or invalid", nameof(path));
-
-        var added = new List<AddedToken>();
-        foreach (var kvp in addedTokens)
+        return await Task.Run(() =>
         {
-            added.Add(new AddedToken(kvp.Key, Special: true));
-            encoder[kvp.Key] = kvp.Value;
-            decoder[kvp.Value] = kvp.Key;
-        }
+            var addedTokens = JsonSerializer.Deserialize<Dictionary<string, int>>(addedTokensStream);
+            if (addedTokens is null) throw new ArgumentException("Added tokens file is empty or invalid", nameof(addedTokensStream));
 
-        return added;
+            var added = new List<string>();
+            foreach (var kvp in addedTokens)
+            {
+                added.Add(kvp.Key);
+                encoder[kvp.Key] = kvp.Value;
+                decoder[kvp.Value] = kvp.Key;
+            }
+
+            return added;
+        });
     }
 
     private static (Dictionary<byte, int> ByteEncoder, Dictionary<int, byte> ByteDecoder) InitializeByteMappings()
@@ -191,15 +194,25 @@ public partial class BartTokenizer
 
     public List<string> Tokenize(string text)
     {
-        var tokens = new List<string>();
-        foreach (Match match in _pattern.Matches(text))
+        var parts = _specialTokens.Split(text);
+        var result = new List<string>();
+
+        foreach (var part in parts)
         {
-            var token = match.Value;
-            var encodedToken = EncodeToken(token);
-            tokens.AddRange(BytePairEncode(encodedToken).Split(' '));
+            if (_specialTokens.Contains(part))
+            {
+                result.Add(part);
+                continue;
+            }
+
+            foreach (var match in _pattern.Matches(part).Select(m => m.Value))
+            {
+                var encodedToken = EncodeToken(match);
+                result.AddRange(BytePairEncode(encodedToken).Split(' '));
+            }
         }
 
-        return tokens;
+        return result;
     }
 
     private string EncodeToken(string token)
@@ -211,9 +224,9 @@ public partial class BartTokenizer
 
         foreach (var b in bytes)
         {
-            if (_byteEncoder.ContainsKey(b))
+            if (_byteEncoder.TryGetValue(b, out var value))
             {
-                encoded.Append((char)_byteEncoder[b]);
+                encoded.Append((char)value);
             }
         }
 
@@ -235,8 +248,8 @@ public partial class BartTokenizer
 
     private string BytePairEncode(string token)
     {
-        if (_cache.ContainsKey(token))
-            return _cache[token];
+        if (_cache.TryGetValue(token, out var encode))
+            return encode;
 
         var word = token.Select(c => c.ToString()).ToList();
         if (word.Count <= 1)
@@ -314,17 +327,11 @@ public partial class BartTokenizer
 
     public List<int> ConvertTokensToIds(List<string> tokens)
     {
+        var unknown = _encoder[UnkToken];
         var ids = new List<int>();
         foreach (var token in tokens)
         {
-            if (_encoder.ContainsKey(token))
-            {
-                ids.Add(_encoder[token]);
-            }
-            else
-            {
-                ids.Add(_encoder[UnkToken]);
-            }
+            ids.Add(_encoder.GetValueOrDefault(token, unknown));
         }
 
         return ids;
@@ -347,10 +354,9 @@ public partial class BartTokenizer
             //         Debug.WriteLine($"special token {id} => '{_decoder.GetValueOrDefault(id, "unknown")}'");                    
             //     }
             // }
-            
-            if (_decoder.ContainsKey(id))
+
+            if (_decoder.TryGetValue(id, out var token))
             {
-                var token = _decoder[id];
                 if (!skipSpecialTokens || !_specialTokens.Contains(token))
                 {
                     tokens.Add(token);
@@ -363,9 +369,9 @@ public partial class BartTokenizer
 
         foreach (char c in text)
         {
-            if (_byteDecoder.ContainsKey(c))
+            if (_byteDecoder.TryGetValue(c, out var value))
             {
-                bytes.Add(_byteDecoder[c]);
+                bytes.Add(value);
             }
         }
 

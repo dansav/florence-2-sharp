@@ -17,9 +17,9 @@ public partial class GroundingTaskGroupViewModel : ObservableObject, ITaskGroupV
 
     [ObservableProperty] private Florence2TaskType _selectedTask;
 
-    [ObservableProperty] private string? _customPrompt;
-
-    private Action<Florence2TaskType>? _runTask;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCustomPrompt))]
+    private string? _customPrompt;
 
     public GroundingTaskGroupViewModel()
     {
@@ -28,25 +28,12 @@ public partial class GroundingTaskGroupViewModel : ObservableObject, ITaskGroupV
     
     public string Header => "Grounding";
 
-    public ITaskGroupViewModel Initialize(Action<Florence2TaskType> runTask)
-    {
-        _runTask = runTask;
-        return this;
-    }
+    public bool HasCustomPrompt => !String.IsNullOrWhiteSpace(CustomPrompt);
 
     public void SelectFirstTask()
     {
-        // we can not rely on the change event to trigger the task
-        if (SelectedTask == PredefinedTasks.First()) _runTask?.Invoke(SelectedTask);
         SelectedTask = PredefinedTasks.First();
     }
 
     public Florence2Query Query() => Florence2Tasks.CreateQuery(SelectedTask, CustomPrompt ?? string.Empty);
-
-    public void Run()
-    {
-        _runTask?.Invoke(SelectedTask);
-    }
-
-    partial void OnSelectedTaskChanged(Florence2TaskType value) => _runTask?.Invoke(value);
 }

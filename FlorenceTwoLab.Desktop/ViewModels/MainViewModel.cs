@@ -4,16 +4,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 using FlorenceTwoLab.Core;
 using FlorenceTwoLab.Core.Utils;
 using FlorenceTwoLab.Desktop.Models;
-
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -32,11 +30,16 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
 
     [ObservableProperty] private string? _output;
 
-    [ObservableProperty] private SixLabors.ImageSharp.Image? _preview;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RunCommand), nameof(CreateRegionCommand))]
+    private Image? _preview;
 
     [ObservableProperty] private bool _isPreviewVisible;
 
-    [ObservableProperty] private ITaskGroupViewModel? _selectedTaskGroup;
+    [ObservableProperty] 
+    [NotifyPropertyChangedFor(nameof(CanSelectRegion))]
+    [NotifyCanExecuteChangedFor(nameof(RunCommand), nameof(CreateRegionCommand), nameof(ClearRegionCommand))]
+    private ITaskGroupViewModel? _selectedTaskGroup;
 
     private Florence2Pipeline? _pipeline;
 
@@ -46,12 +49,22 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
     {
         _taskGroups =
         [
-            new BasicTaskGroupViewModel().Initialize(RunTask),
-            new RegionTaskGroupViewModel(this).Initialize(RunTask),
-            new GroundingTaskGroupViewModel().Initialize(RunTask)
+            new BasicTaskGroupViewModel(),
+            new RegionTaskGroupViewModel(this),
+            new GroundingTaskGroupViewModel()
         ];
 
         ImageRegionSelector = new();
+        ImageRegionSelector.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(ImageRegionSelector.HasRegions))
+            {
+                RunCommand.NotifyCanExecuteChanged();
+                CreateRegionCommand.NotifyCanExecuteChanged();
+                ClearRegionCommand.NotifyCanExecuteChanged();
+                OnPropertyChanged(nameof(CanSelectRegion));
+            }
+        };
         ImageRegionSelector.Regions.CollectionChanged += (s, e) =>
         {
             if (e.NewItems is not null && e.NewItems.Count > 0)
@@ -63,7 +76,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
         };
     }
     
-    public event Action<RegionOfInterest, Size> ImageSelectionChanged;
+    public event Action<RegionOfInterest, Size>? ImageSelectionChanged;
 
     public ImageRegionSelectorViewModel ImageRegionSelector { get; }
 
@@ -71,6 +84,8 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
 
     public Size ImageSize => _loadedImage?.Size ?? new Size(0, 0);
 
+    public bool CanSelectRegion => SelectedTaskGroup is RegionTaskGroupViewModel && !ImageRegionSelector.HasRegions;
+    
     public async Task InitializeAsync()
     {
         string? modelDir = Environment.GetEnvironmentVariable("FLORENCE2_ONNX_MODELS");
@@ -101,22 +116,6 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
         // var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
     }
 
-    private async void RunTask(Florence2TaskType value)
-    {
-        Debug.WriteLine($"Selected task: {value}");
-
-        if (_loadedImage is null) return;
-        try
-        {
-            await RunAsync();
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine(e);
-            throw;
-        }
-    }
-
     partial void OnSelectedTaskGroupChanged(ITaskGroupViewModel? value)
     {
         value?.SelectFirstTask();
@@ -124,14 +123,13 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
 
     public async Task LoadImageAsync(Stream stream)
     {
-        var image = await SixLabors.ImageSharp.Image.LoadAsync(stream);
+        var image = await Image.LoadAsync(stream);
         _loadedImage = image;
         Preview = image;
-
-        await RunAsync();
     }
-
-    public async Task RunAsync()
+    
+    [RelayCommand(CanExecute = nameof(CanRun))]
+    private async Task RunAsync()
     {
         if (_pipeline is null)
         {
@@ -202,7 +200,49 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             }
         }
     }
+    
+    [RelayCommand(CanExecute = nameof(CanCreateRegion))]
+    private void CreateRegion(){}
+    
+    [RelayCommand(CanExecute = nameof(CanClearRegion))]
+    private void ClearRegion()
+    {
+        ImageRegionSelector.ClearRegions();
+    }
+    
+    private bool CanRun()
+    {
+        if (_pipeline is null)
+        {
+            Debug.WriteLine("Pipeline not initialized");
+            return false;
+        }
+        
+        if (_loadedImage is null)
+        {
+            Debug.WriteLine("No image loaded");
+            return false;
+        }
 
+        return SelectedTaskGroup switch
+        {
+            BasicTaskGroupViewModel => true,
+            GroundingTaskGroupViewModel grounding => grounding.HasCustomPrompt,
+            RegionTaskGroupViewModel => ImageRegionSelector.HasRegions,
+            _ => false
+        };
+    }
+
+    private bool CanCreateRegion()
+    {
+        return Preview is not null && SelectedTaskGroup is RegionTaskGroupViewModel && !ImageRegionSelector.HasRegions;
+    }
+    
+    private bool CanClearRegion()
+    {
+        return ImageRegionSelector.HasRegions;
+    }
+    
     private async Task<Image> DecorateAsync(
         Image image,
         List<string>? labels = null,

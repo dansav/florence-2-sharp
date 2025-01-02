@@ -31,6 +31,14 @@ public partial class ImageRegionSelectorViewModel : ObservableObject
     
     public ObservableCollection<RegionOfInterest> Regions { get; } = new();
     
+    public bool HasRegions => Regions.Count > 0;
+    
+    public void ClearRegions()
+    {
+        Regions.Clear();
+        OnPropertyChanged(nameof(HasRegions));
+    }
+
     [RelayCommand]
     private void StartDrawing(Point point)
     {
@@ -65,6 +73,7 @@ public partial class ImageRegionSelectorViewModel : ObservableObject
         {
             CurrentRegion.IsComplete = true;
             Regions.Add(CurrentRegion);
+            OnPropertyChanged(nameof(HasRegions));
         }
         CurrentRegion = null;
     }

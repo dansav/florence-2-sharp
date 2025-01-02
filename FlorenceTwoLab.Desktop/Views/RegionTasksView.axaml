@@ -10,6 +10,5 @@
         <ComboBox ItemsSource="{Binding PredefinedTasks}"
                   SelectedItem="{Binding SelectedTask, Mode=TwoWay}"
                   HorizontalAlignment="Stretch" />
-        <Button Margin="0 10 0 0" Command="{Binding CreateCommand}">Create region</Button>
     </StackPanel>
 </UserControl>

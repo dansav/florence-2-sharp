@@ -22,8 +22,6 @@ public partial class BasicTaskGroupViewModel : ObservableObject, ITaskGroupViewM
 
     [ObservableProperty] private Florence2TaskType _selectedTask;
     
-    private Action<Florence2TaskType>? _runTask;
-
     public BasicTaskGroupViewModel()
     {
         SelectedTask = _predefinedTasks.First();
@@ -35,16 +33,6 @@ public partial class BasicTaskGroupViewModel : ObservableObject, ITaskGroupViewM
     
     public void SelectFirstTask()
     {
-        // we can not rely on the change event to trigger the task
-        if (SelectedTask == PredefinedTasks.First()) _runTask?.Invoke(SelectedTask);
         SelectedTask = PredefinedTasks.First();
     }
-
-    public ITaskGroupViewModel Initialize(Action<Florence2TaskType> runTask)
-    {
-        _runTask = runTask;
-        return this;
-    }
-    
-    partial void OnSelectedTaskChanged(Florence2TaskType value) => _runTask?.Invoke(value);
 }

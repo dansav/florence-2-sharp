@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
-
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-
 using FlorenceTwoLab.Core;
 using FlorenceTwoLab.Desktop.Models;
 
@@ -27,7 +22,6 @@ public partial class RegionTaskGroupViewModel : ObservableObject, ITaskGroupView
 
     [ObservableProperty] private Florence2TaskType _selectedTask;
 
-    private Action<Florence2TaskType>? _runTask;
     private Rectangle? _region;
     private Size? _imageSize;
 
@@ -39,12 +33,8 @@ public partial class RegionTaskGroupViewModel : ObservableObject, ITaskGroupView
     }
 
     public string Header => "Region";
-
-    public ITaskGroupViewModel Initialize(Action<Florence2TaskType> runTask)
-    {
-        _runTask = runTask;
-        return this;
-    }
+    
+    public bool HasRegion => _region is not null;
 
     public Florence2Query? Query()
     {
@@ -58,22 +48,9 @@ public partial class RegionTaskGroupViewModel : ObservableObject, ITaskGroupView
 
     public void SelectFirstTask()
     {
-        // we can not rely on the change event to trigger the task
-        if (SelectedTask == PredefinedTasks.First()) InvokeTask(SelectedTask);
         SelectedTask = PredefinedTasks.First();
     }
 
-    partial void OnSelectedTaskChanged(Florence2TaskType value)
-    {
-        InvokeTask(value);
-    }
-
-    [RelayCommand]
-    private void Create()
-    {
-        Debug.WriteLine("CREATE REGION");
-    }
-    
     private void ImageSelectionSourceOnImageSelectionChanged(RegionOfInterest region, Size imageSize)
     {
         _region = new Rectangle(
@@ -83,16 +60,5 @@ public partial class RegionTaskGroupViewModel : ObservableObject, ITaskGroupView
             (int)region.Height
         );
         _imageSize = imageSize;
-        
-        // TODO: only if region task is selected
-        InvokeTask(SelectedTask);
-    }
-
-    private void InvokeTask(Florence2TaskType value)
-    {
-        if (_region is { IsEmpty: false } && _imageSize is { Width: > 0, Height: > 0 })
-        {
-            _runTask?.Invoke(value);
-        }
     }
 }

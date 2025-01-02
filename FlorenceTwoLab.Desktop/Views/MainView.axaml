@@ -80,7 +80,7 @@
                        Source="{Binding Preview, Converter={StaticResource ImageConverter}}"
                        IsVisible="{Binding IsPreviewVisible}" />
 
-                <Border IsVisible="{Binding CanSelectRegion}">
+                <Border IsVisible="{Binding RegionSelectionEnabled}">
                     <views:ImageRegionSelectorView
                         Image="{Binding #PreviewImage}"
                         DataContext="{Binding ImageRegionSelector}" />

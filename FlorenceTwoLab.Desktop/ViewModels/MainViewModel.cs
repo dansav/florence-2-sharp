@@ -37,7 +37,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
     [ObservableProperty] private bool _isPreviewVisible;
 
     [ObservableProperty] 
-    [NotifyPropertyChangedFor(nameof(CanSelectRegion))]
+    [NotifyPropertyChangedFor(nameof(RegionSelectionEnabled))]
     [NotifyCanExecuteChangedFor(nameof(RunCommand), nameof(CreateRegionCommand), nameof(ClearRegionCommand))]
     private ITaskGroupViewModel? _selectedTaskGroup;
 
@@ -62,7 +62,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
                 RunCommand.NotifyCanExecuteChanged();
                 CreateRegionCommand.NotifyCanExecuteChanged();
                 ClearRegionCommand.NotifyCanExecuteChanged();
-                OnPropertyChanged(nameof(CanSelectRegion));
+                OnPropertyChanged(nameof(RegionSelectionEnabled));
             }
         };
         ImageRegionSelector.Regions.CollectionChanged += (s, e) =>
@@ -84,7 +84,7 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
 
     public Size ImageSize => _loadedImage?.Size ?? new Size(0, 0);
 
-    public bool CanSelectRegion => SelectedTaskGroup is RegionTaskGroupViewModel && !ImageRegionSelector.HasRegions;
+    public bool RegionSelectionEnabled => SelectedTaskGroup is RegionTaskGroupViewModel;
     
     public async Task InitializeAsync()
     {

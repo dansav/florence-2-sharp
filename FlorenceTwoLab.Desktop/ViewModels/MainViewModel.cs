@@ -65,17 +65,19 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
                 OnPropertyChanged(nameof(RegionSelectionEnabled));
             }
         };
-        ImageRegionSelector.Regions.CollectionChanged += (s, e) =>
+        ImageRegionSelector.Regions.CollectionChanged += async (s, e) =>
         {
             if (e.NewItems is not null && e.NewItems.Count > 0)
             {
                 var region = e.NewItems[0] as RegionOfInterest;
                 if (region is null) return;
                 ImageSelectionChanged?.Invoke(region, ImageSize);
+                
+                Preview = await DebugDecorateAsync(_loadedImage, region);
             }
         };
     }
-    
+
     public event Action<RegionOfInterest, Size>? ImageSelectionChanged;
 
     public ImageRegionSelectorViewModel ImageRegionSelector { get; }
@@ -291,5 +293,28 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
             });
             return image2;
         });
+    }
+    
+    private async Task<Image?> DebugDecorateAsync(Image? loadedImage, RegionOfInterest region)
+    {
+        if (loadedImage is null) return null;
+
+        var image = loadedImage.CloneAs<Rgba32>();
+        
+        image.Mutate(ctx =>
+        {
+            var w = image.Width;
+            var h = image.Height;
+            var chrome = new SolidBrush(Color.Green.WithAlpha(0.3f));
+            var lineThickness = (float)Math.Sqrt(w * h) / 100f;
+            var rect = region.RelativeBounds;
+            
+            ctx.DrawPolygon(chrome, lineThickness,
+                new PointF(w * rect.Left, h * rect.Top),
+                new PointF(w * rect.Right, h * rect.Top),
+                new PointF(w * rect.Right, h * rect.Bottom),
+                new PointF(w * rect.Left, h * rect.Bottom));
+        });
+        return image;
     }
 }

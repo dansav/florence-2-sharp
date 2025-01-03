@@ -14,15 +14,15 @@ public partial class RegionTaskGroupViewModel : ObservableObject, ITaskGroupView
 
     [ObservableProperty] private IReadOnlyCollection<Florence2TaskType> _predefinedTasks =
     [
-        Florence2TaskType.RegionToSegmentation,
         Florence2TaskType.RegionToCategory,
         Florence2TaskType.RegionToDescription,
-        Florence2TaskType.RegionToOcr
+        Florence2TaskType.RegionToOcr,
+        Florence2TaskType.RegionToSegmentation,
     ];
 
     [ObservableProperty] private Florence2TaskType _selectedTask;
 
-    private Rectangle? _region;
+    private RectangleF? _region;
     private Size? _imageSize;
 
     public RegionTaskGroupViewModel(IImageSelectionSource imageSelectionSource)
@@ -38,9 +38,9 @@ public partial class RegionTaskGroupViewModel : ObservableObject, ITaskGroupView
 
     public Florence2Query? Query()
     {
-        if (_region is { IsEmpty: false } region && _imageSize is { Width: > 0, Height: > 0 } imageSize)
+        if (_region is { IsEmpty: false } region && _imageSize is { Width: > 0, Height: > 0 })
         {
-            return Florence2Tasks.CreateQuery(SelectedTask, region, imageSize);
+            return Florence2Tasks.CreateQuery(SelectedTask, region);
         }
 
         return null;
@@ -53,12 +53,9 @@ public partial class RegionTaskGroupViewModel : ObservableObject, ITaskGroupView
 
     private void ImageSelectionSourceOnImageSelectionChanged(RegionOfInterest region, Size imageSize)
     {
-        _region = new Rectangle(
-            (int)region.Left,
-            (int)region.Top,
-            (int)region.Width,
-            (int)region.Height
-        );
+        _region = region.RelativeBounds;
         _imageSize = imageSize;
+        
+        OnPropertyChanged(nameof(HasRegion));
     }
 }

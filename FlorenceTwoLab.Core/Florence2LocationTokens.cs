@@ -13,14 +13,14 @@ public static class Florence2LocationTokens
     /// <summary>
     /// Creates a normalized location token string from a region and image size
     /// </summary>
-    public static string CreateNormalizedRegionString(this Rectangle region, Size imageSize)
+    public static string CreateNormalizedRegionString(this RectangleF region)
     {
         var topleft = new Point(
-            NormalizeCoordinate(region.Left, imageSize.Width),
-            NormalizeCoordinate(region.Top, imageSize.Height));
+            (int) (region.Left * TokenCoordinateRange),
+            (int) (region.Top * TokenCoordinateRange));
         var bottomRight = new Point(
-            NormalizeCoordinate(region.Right, imageSize.Width),
-            NormalizeCoordinate(region.Bottom, imageSize.Height));
+            (int) (region.Right * TokenCoordinateRange),
+            (int) (region.Bottom * TokenCoordinateRange));
         
         return CoordinatesToTokens(topleft, bottomRight);
     }
@@ -63,15 +63,6 @@ public static class Florence2LocationTokens
             DenormalizeCoordinate(coordinates[2], imageSize.Width) - DenormalizeCoordinate(coordinates[0], imageSize.Width),
             DenormalizeCoordinate(coordinates[3], imageSize.Height) - DenormalizeCoordinate(coordinates[1], imageSize.Height)
         );
-    }
-
-    /// <summary>
-    /// Normalizes a pixel coordinate to the 0-999 range used by Florence
-    /// </summary>
-    public static int NormalizeCoordinate(int pixelCoordinate, int imageDimension)
-    {
-        // Convert pixel coordinate to 0-999 range
-        return Math.Clamp((pixelCoordinate * TokenCoordinateRange) / imageDimension, 0, TokenCoordinateRange - 1);
     }
 
     /// <summary>

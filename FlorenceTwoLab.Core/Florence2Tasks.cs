@@ -114,16 +114,13 @@ public class Florence2Tasks
     /// <param name="region">
     /// The region of the image to query.
     /// </param>
-    /// <param name="imageSize">
-    /// The original size of the image.
-    /// </param>
     /// <returns>
     /// A query for the specified task type with the specified region.
     /// </returns>
     /// <exception cref="ArgumentException">
     /// Thrown when the task type is not supported.
     /// </exception>
-    public static Florence2Query CreateQuery(Florence2TaskType taskType, Rectangle region, Size imageSize)
+    public static Florence2Query CreateQuery(Florence2TaskType taskType, RectangleF region)
     {
         if (!TaskConfigurations.TryGetValue(taskType, out var config))
             throw new ArgumentException($"Unsupported task type: {taskType}");
@@ -131,7 +128,7 @@ public class Florence2Tasks
         if (!config.RequiresRegionInput)
             throw new ArgumentException($"Task {taskType} does not handle region parameter");
 
-        var regionString = region.CreateNormalizedRegionString(imageSize);
+        var regionString = region.CreateNormalizedRegionString();
         return new Florence2Query(taskType, string.Format(config.Prompt, regionString));
     }
 

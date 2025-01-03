@@ -43,11 +43,11 @@ public partial class ImageRegionSelectorViewModel : ObservableObject
     private void StartDrawing(Point point)
     {
         Regions.Clear();
-        CurrentRegion = new RegionOfInterest 
-        { 
-            StartPoint = point,
-            EndPoint = point
-        };
+
+        var region = new RegionOfInterest();
+        region.Start(point);
+        
+        CurrentRegion = region;
     }
     
     [RelayCommand]
@@ -55,7 +55,7 @@ public partial class ImageRegionSelectorViewModel : ObservableObject
     {
         if (CurrentRegion is null) return;
         
-        CurrentRegion.EndPoint = point;
+        CurrentRegion.Update(point);
         OnPropertyChanged(nameof(IsDrawing));
         OnPropertyChanged(nameof(DrawingLeft));
         OnPropertyChanged(nameof(DrawingTop));
@@ -68,10 +68,9 @@ public partial class ImageRegionSelectorViewModel : ObservableObject
     {
         if (CurrentRegion is null) return;
         
-        CurrentRegion.Crop(imageBounds);
+        CurrentRegion.End(imageBounds);
         if (CurrentRegion.Width > 0 && CurrentRegion.Height > 0)
         {
-            CurrentRegion.IsComplete = true;
             Regions.Add(CurrentRegion);
             OnPropertyChanged(nameof(HasRegions));
         }

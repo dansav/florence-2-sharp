@@ -1,61 +1,84 @@
 # Florence 2 C# Lab Project
 
+Welcome to the Florence 2 C# Lab Project!
+
+This project explores the requirements and processes involved in performing inference with the Florence 2 models using C#/.NET.
+
 ## Getting Started
 
-Welcome to the Florence 2 C# Lab Project! Follow these instructions to set up your development environment and get started with the project.
+Follow these instructions to set up your development environment and get started with the project.
+
+All code builds and runs on Windows and macOS.
 
 ### Prerequisites
 
-- .NET 8.0 SDK
-- Visual Studio 2022 or Visual Studio Code
-- Git
-- AvaloniaUI
-- CommunityToolkit.Mvvm
-- ImageSharp
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- **Optional**: To run the Python code
+  - [uv](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) Python project manager
 
-### Installation
+## .NET Projects
 
-1. **Clone the repository:**
+### Install and Build
+
+1. **Ensure .NET 8.0 SDK is installed**
+
+    Download and install the .NET 8.0 SDK from the [official .NET website](https://dotnet.microsoft.com/download/dotnet/8.0).
+
+2. **Clone the repository:**
 
     ```sh
     git clone https://github.com/dansav/florence-2-sharp.git
     cd florence-2-sharp
     ```
 
-2. **Install .NET 8.0 SDK:**
-
-    Download and install the .NET 8.0 SDK from the [official .NET website](https://dotnet.microsoft.com/download/dotnet/8.0).
-
-3. **Building and running the Project
+3. **Build and run the test application**
 
     ```sh
-    dotnet run
+    dotnet build
+    dotnet run --project FlorenceTwoLab.Desktop/FlorenceTwoLab.Desktop.csproj
     ```
 
-### Folder Structure
+## Python Research Project
 
-- /src: Contains the main project source code.
-- /tests: Contains unit tests for the project.
-- /research: Contains stubs and hints on data structures.
+### Setup
 
-### License
+1. Install the [uv](https:?tab=readme-ov-file#installation//github.1. Download models and some test data:
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+    ```sh
+    uv run setup.py
+    ```
 
-### Contact
+1. Run main test script
+
+    ```sh
+    uv run main.py
+    ```
+com/astral-sh/uv?tab=readme-ov-file#installation)FlorenceTwoLab.Coreand some test data:
+
+    ```sh
+    uv run setup.py
+    ```
+
+1. Run FlorenceTwoLab.Core.Testssh
+    uv run main.py
+    ```
+
+## Folder Structure
+
+- [FlorenceTwoLFlorenceTwoLab.Desktope): Contains the core project source code.
+- [FlorenceTwoLab.Core.Tests](FlorenceTwoLab.Core.Tests): Contains researchject.
+- [FlorenceTwoLab.Desktop](FlorenceTwoLab.  - [python_reference_implementation](research/python_reference_implementation) The reference implementation using Python.
+Desktop): Contains the desktop application source code built with AvaloniaUI and CommunityToolkit MVVM.
+- [research](research): Contains stubs and hints on data structures.
+  - [python_referen all image-related tasks.
+- **AvaloniaUI** and **CommunityToolkit MVVM** framework for building the user in6erface.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](http://_vscodecontentref_/6) file for details.
+
+## Contact
 
 For any questions or issues, please open an issue on GitHub or contact the project maintainers.
 
 Happy coding!
-
-## References
-
-The code in this repository was inspired by the following repositories:
-
-- [https://huggingface.co/onnx-community/Florence-2-*](https://huggingface.co/onnx-community/Florence-2-large)
-  
-  The model files and pre processor configurations
-
-- [https://huggingface.co/microsoft/Florence-2-*](https://huggingface.co/microsoft/Florence-2-large)
-
-  This repo uses PyTorch/transformers. I believe this is the official version. It has inspired the post processing of the model output.

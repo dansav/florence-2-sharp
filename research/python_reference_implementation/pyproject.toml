@@ -1,0 +1,14 @@
+[project]
+name = "python-reference-implementation"
+version = "0.1.0"
+description = "A reference Python implementation for inferences using the Florence-2 ONNX models."
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.1",
+    "onnxruntime>=1.20.1",
+    "requests>=2.32.3",
+    "torch>=2.5.1",
+    "torchvision>=0.20.1",
+    "transformers>=4.47.1",
+]

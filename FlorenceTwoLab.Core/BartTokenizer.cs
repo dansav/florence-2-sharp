@@ -342,19 +342,6 @@ public partial class BartTokenizer
         var tokens = new List<string>();
         foreach (var id in ids.SkipWhile(i => i < 3)) // Skip initial special tokens
         {
-            // We could decode a special object instead of a string to optimize the use of location tokens
-            // if (id > 50264)
-            // {
-            //     if (id >= 50269 && id <= 51268)
-            //     {
-            //         Debug.WriteLine($"special location token for '{id - 50269}' ({id})");
-            //     }
-            //     else
-            //     {
-            //         Debug.WriteLine($"special token {id} => '{_decoder.GetValueOrDefault(id, "unknown")}'");                    
-            //     }
-            // }
-
             if (_decoder.TryGetValue(id, out var token))
             {
                 if (!skipSpecialTokens || !_specialTokens.Contains(token))

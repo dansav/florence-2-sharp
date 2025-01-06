@@ -14,7 +14,7 @@ All code builds and runs on Windows and macOS.
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - **Optional**: To run the Python code
-  - [uv](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) Python project manager
+  - [uv](https://github.com/astral-sh/uv) Python project manager
 
 ## .NET Projects
 
@@ -42,7 +42,7 @@ All code builds and runs on Windows and macOS.
 
 ### Setup
 
-1. Install the [uv](https:?tab=readme-ov-file#installation) tool.
+1. Install the [uv](https://github.com/astral-sh/uv#installation) tool.
 
 1. Download models and some test data:
 
@@ -59,8 +59,8 @@ All code builds and runs on Windows and macOS.
 ## Folder Structure
 
 - [FlorenceTwoLab.Core](FlorenceTwoLab.Core): Core implementation of the Florence 2 model and related utilities
-- [FlorenceTwoLab.Core.Tests]: Unit tests for the core functionality
-- [FlorenceTwoLab.Desktop]: AvaloniaUI-based desktop application
+- [FlorenceTwoLab.Core.Tests](FlorenceTwoLab.Core.Tests): Unit tests for the core functionality
+- [FlorenceTwoLab.Desktop](FlorenceTwoLab.Desktop): AvaloniaUI-based desktop application
 - [research](research): Research materials and documentation
   - [python_reference_implementation](research/python_reference_implementation): Reference implementation in Python
 

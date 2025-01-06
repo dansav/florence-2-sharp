@@ -61,18 +61,6 @@ public partial class Florence2Pipeline
 
         // 3. Concatenate vision and text features
         var (projectedFeatures, projectedAttentionMask) = _encoderPreprocessor.Process(visionFeatures, textFeatures, tokenized);
-        // var projectedFeatures = EncoderPreprocessor.ConcatenateTensors(visionFeatures, textFeatures, 1);
-        //
-        // var visionAttentionMask = new DenseTensor<long>(
-        //     Enumerable.Range(0, visionFeatures.Dimensions[1]).Select(f => 1L).ToArray(),
-        //     [1, visionFeatures.Dimensions[1]]);
-        // Debug.Assert(visionFeatures.Dimensions[1] == visionAttentionMask.Dimensions[1]);
-        //
-        // var textAttentionMask =
-        //     new DenseTensor<long>(tokenized.Select(t => t == BartTokenizer.PadToken ? 0L : 1L).ToArray(), shape);
-        // Debug.Assert(textFeatures.Dimensions[1] == textAttentionMask.Dimensions[1]);
-        //
-        // var projectedAttentionMask = EncoderPreprocessor.ConcatenateTensors(visionAttentionMask, textAttentionMask, 1);
 
         // 4. Run encoder to get hidden states for decoder
         var encoderHiddenStates = await _modelRunner.RunEncoderAsync(projectedFeatures, projectedAttentionMask);

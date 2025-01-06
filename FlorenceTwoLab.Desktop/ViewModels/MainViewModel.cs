@@ -105,17 +105,6 @@ public partial class MainViewModel : ObservableObject, IImageSelectionSource
         };
 
         _pipeline = await Florence2Pipeline.CreateAsync(config);
-
-        // string? testDataDir = Environment.GetEnvironmentVariable("FLORENCE2_TEST_DATA");
-        // if (string.IsNullOrEmpty(testDataDir))
-        // {
-        //     var helper = new DataHelper();
-        //     await helper.EnsureTestDataFilesAsync();
-        //     testDataDir = helper.TestDataDirectory;
-        // }
-
-        // var testFile = Directory.GetFiles(testDataDir, "*.jpg")[0];
-        // var image = SixLabors.ImageSharp.Image.Load(System.IO.Path.Combine(testDataDir, testFile));
     }
 
     partial void OnSelectedTaskGroupChanged(ITaskGroupViewModel? value)
